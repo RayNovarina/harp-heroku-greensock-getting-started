@@ -282,13 +282,12 @@ function TrrEffect() {
   this.convert = function( options, /*Code to resume when done*/ callback ) {
     //--------------------------------------------------------------------------
     console.log( " ..*4.1) convert() *");
+    this.conversionContainerBackgroundRGB = this.imgDataBackgroundRGB;
+    this.conversionContainerBackgroundRGBA = this.imgDataBackgroundRGBA;
+    this.settings.rgbChannel = 'blue'; // this.settings.halftoneColor
 
-    this.createParticleMap( {
-      id: this.settings.id
-    },
-    /*1-Resume here when done*/ function( particles ) {
-    this.particles = particles;
-    this.createScene( {
+    // Create conversionContainer
+    this.createSceneContainer( {
       sceneId: 'scene_Con_' + this.settings.id,
       sceneWidth: 430,
       sceneHeight: 436,
@@ -298,8 +297,15 @@ function TrrEffect() {
       //  background color of Climate Corp profile photo for Meg: rgb(234, 233, 238) #eae9ee
       sceneBorder: '',
     },
-    /*2-Resume here when done*/ function( scene ) {
+    /*1-Resume here when done*/ function( scene ) {
     this.scene = scene;
+    // Create particle array by selecting pixels we want for a halftone image.
+    this.createParticleMap( {
+      id: this.settings.id
+    },
+    /*2-Resume here when done*/ function( particles ) {
+    this.particles = particles;
+    // Create elements (from the particle map) in a form that we can animate.
     this.createAnimationElements( {
       animationElementWidth: 6,
       animationElementHeight: 6,
@@ -360,7 +366,8 @@ function TrrEffect() {
     }
 
     // NOTE: Most scene options are used from scene created for the conversionContainer.
-    this.createScene( {
+    // Create animationContainer
+    this.createSceneContainer( {
       sceneId: 'scene_Ani_' + this.settings.id,
     },
     /*1-Resume here when done*/ function( scene ) {
@@ -419,6 +426,7 @@ function TrrEffect() {
     //--------------------------------------------------------------------------
     console.log( " ..*5) createParticleMap() for id: '" + options.id +
                  "'. useTrrData: '" + this.settings.isUseTrrData + "'. *");
+
     var particles = [];
     if ( this.settings.isUseTrrData ) {
       particles = this.makeParticlesFromTrrMap( {
@@ -428,10 +436,24 @@ function TrrEffect() {
         particlesHomeOffsetTop: 20,
       } );
     } else {
+      this.particlesRejectedBecauseParticleIsOutOfBounds = 0;
+      this.particlesRejectedBecausePixelIntensityLessThanThreshold = 0;
+      this.particlesRejectedBecausePixelSameAsConversionContainerBackgroundRGB = 0;
+      this.particlesRejectedBecausePixelSameAsConversionContainerBackgroundRGBA = 0;
+      this.settings.rgbChannelOffset = RGB_CHANNEL_OFFSETS[ this.settings.rgbChannel ];
+      this.settings.rgbChannelAngle = RGB_CHANNEL_ANGLES[ this.settings.rgbChannel ];
+
       particles = this.makeCartesianGridParticles( {
         id: options.id,
         particlesHomeOffsetLeft: 82,
         particlesHomeOffsetTop: 20,
+        maxHalftoneDotSize: 1/150,
+        pixelChannelIntensityThreshold: 0.05,
+        imageScale: 1.0, // canvas.width / imgWidth;
+        pixelsPerCluster: 1,
+        isRejectParticlesOutOfBounds: true,
+        isRejectParticlesBelowIntensityThreshold: true,
+        isRejectParticlesSameAsConversionContainerBackground: true,
       } );
     }
     console.log( " ..*5a) createParticleMap() Created particles[" + particles.length + "] *");
@@ -475,57 +497,80 @@ function TrrEffect() {
     updateSettings( options );
     console.log( " ..*5.2) makeCartesianGridParticles() for id: " + this.settings.id +
                  ". Particles Home position Offset left: " + this.settings.particlesHomeOffsetLeft +
-                 ". top: " + this.settings.particlesHomeOffsetTop + ".");
+                 ". top: " + this.settings.particlesHomeOffsetTop +
+                 ". pixelsPerCluster: " + this.settings.pixelsPerCluster +
+                 ". isRejectParticlesOutOfBounds: " + this.settings.isRejectParticlesOutOfBounds +
+                 ". isRejectParticlesBelowIntensityThreshold: " + this.settings.isRejectParticlesBelowIntensityThreshold +
+                 ". isRejectParticlesSameAsConversionContainerBackground: " + this.settings.isRejectParticlesSameAsConversionContainerBackground +                 ".");
 
-    this.settings.rgbChannel = 'blue'; // this.settings.halftoneColor
-    this.settings.rgbChannelOffset = RGB_CHANNEL_OFFSETS[ this.settings.rgbChannel ];
-    this.settings.maxHalftoneDotSize = 1/150;
-    this.settings.pixelChannelIntensityThreshold = 0.05;
-    this.settings.imageScale = 1.0; // canvas.width / imgWidth;
-    this.settings.rgbChannelAngle = RGB_CHANNEL_ANGLES[ this.settings.rgbChannel ];
-    this.conversionContainerBackgroundRGB = this.imgDataBackgroundRGB;
-    this.conversionContainerBackgroundRGBA = this.imgDataBackgroundRGBA;
-
-    this.particlesRejectedBecauseParticleIsOutOfBounds = 0;
-    this.particlesRejectedBecausePixelIntensityLessThanThreshold = 0;
-    this.particlesRejectedBecausePixelSameAsConversionContainerBackgroundRGB = 0;
-    this.particlesRejectedBecausePixelSameAsConversionContainerBackgroundRGBA = 0;
-
+    // Create local variables to reduce loop overhead.
     var particles = [],
         homeOffsetLeft = this.settings.particlesHomeOffsetLeft,
         homeOffsetTop = this.settings.particlesHomeOffsetTop,
+        pixelsPerCluster = this.settings.pixelsPerCluster,
         image_width = this.settings.img.width,
         image_heigth = this.settings.img.height,
         diagonal = Math.sqrt( (image_width * image_width) + (image_heigth * image_heigth) ),
         gridSize = this.settings.maxHalftoneDotSize * diagonal,
         angle = this.settings.rgbChannelAngle,
+        cosAngle = Math.cos(angle),
+        sinAngle = Math.sin(angle),
         diag = Math.max( image_width, image_heigth ) * ROOT_2,
         cols = Math.ceil( diag / gridSize ),
         rows = Math.ceil( diag / gridSize ),
-        maxNumOfParticles =  rows * cols;
+        maxNumOfParticles =  rows * cols,
+        xyOffset = ( diag - image_width ) / 2,
+        halfImageWidth = image_width / 2,
+        halfImageHeigth = image_heigth / 2,
+        halfGridSize = 0.5 * gridSize;
 
     console.log( " ..*5.2a) makeCartesianGridParticles(): BEGIN LOOP: " +
                  ". gridSize = " + gridSize + ". rows = " + rows +
                  ". columns = " + cols + ". Max number of particles = " +
                  maxNumOfParticles + ". *");
 
-    var isTerminateLoop = false;
+    // Calculate the "home position", i.e. the image xy of each filtered pixel.
+    var isTerminateLoop = false,
+        previousStartingX1 = 0;
+
+    var previousStartingY1 = -halfGridSize;
     for ( var row = 0; row < rows; row++ ) {
       if ( isTerminateLoop) {
         break;
       }
+
+      var y1 = previousStartingY1 + gridSize; // y1 = ( row + 0.5 ) * gridSize;
+      previousStartingY1 = y1;
+
+      previousStartingX1 = -halfGridSize; // 0.5 * gridSize
+
       for ( var col = 0; col < cols; col++ ) {
-        var x1 = 0, home_position_x = 0, y1 = 0, home_position_y = 0;
-        x1 = ( col + 0.5 ) * gridSize;
-        y1 = ( row + 0.5 ) * gridSize;
-        x1 -= ( diag - image_width ) / 2;
-        y1 -= ( diag - image_heigth ) / 2;
-        x1 -= image_width / 2;
-        y1 -= image_heigth / 2;
-        home_position_x = x1 * Math.cos(angle) - y1 * Math.sin(angle);
-        home_position_y = x1 * Math.sin(angle) + y1 * Math.cos(angle);
-        home_position_x += image_width / 2;
-        home_position_y += image_heigth / 2;
+        var home_position_x = 0, home_position_y = 0;
+
+        var x1 = previousStartingX1 + gridSize; // x1 = ( col + 0.5 ) * gridSize;
+        previousStartingX1 = x1;
+
+        y1 = previousStartingY1; // y1 = ( row + 0.5 ) * gridSize;
+
+        //x1 -= x1Adjustment; // x1 -= ( diag - image_width ) / 2;
+        //x1 -= halfImageWidth; // x1 -= image_width / 2;
+
+        //var x1 = 0;
+        //x1 = ( col + 0.5 ) * gridSize;
+        //x1 -= ( diag - image_width ) / 2;
+        //x1 -= image_width / 2;
+        x1 = (x1 - xyOffset) - halfImageWidth;
+
+        //var y1 = 0;
+        //y1 = ( row + 0.5 ) * gridSize;
+        //y1 -= ( diag - image_heigth ) / 2;
+        //y1 -= image_heigth / 2;
+        y1 = (y1 - xyOffset) - halfImageWidth;
+
+        home_position_x = x1 * cosAngle - y1 * sinAngle; // home_position_x = x1 * Math.cos(angle) - y1 * Math.sin(angle);
+        home_position_y = x1 * sinAngle + y1 * cosAngle; // home_position_y = x1 * Math.sin(angle) + y1 * Math.cos(angle);
+        home_position_x += halfImageWidth; // home_position_x += image_width / 2;
+        home_position_y += halfImageHeigth; // home_position_y += image_heigth / 2;
 
         // Returns null if rejected. Else returns Particle.
         // NOTE: rejected particle locations just stay whatever the canvas
@@ -533,11 +578,8 @@ function TrrEffect() {
         var filterResults = this.particleFilter( this.settings.rgbChannel, home_position_x, home_position_y );
         if ( filterResults.isAccepted ) {
           particles.push( {
-            // NOTE: x2, y2 is the 'home' location on the image.
             x: filterResults.x + homeOffsetLeft,
             y: filterResults.y+ homeOffsetTop,
-            //rgbaValue: particle.rgbaValue,
-            //dotRadius: particle.naturalSize,
             r: filterResults.pixelChannelIntensity * gridSize,
           });
         }
@@ -569,20 +611,23 @@ function TrrEffect() {
       y = Math.round( y );
     }
 
-    if ( x < 0 || x > this.settings.img.width ||
-         y < 0 || y > this.settings.img.height ) {
+  if ( this.settings.isRejectParticlesOutOfBounds &&
+       ( x < 0 || x > this.settings.img.width ||
+         y < 0 || y > this.settings.img.height ) ) {
       this.particlesRejectedBecauseParticleIsOutOfBounds += 1;
       return { isAccepted: false };
     }
 
     var pixelInfo = this.getPixelInfo( x, y, rgbChannel );
 
-    if ( pixelInfo.channelIntensity < this.settings.pixelChannelIntensityThreshold ) {
+    if ( this.settings.isRejectParticlesBelowIntensityThreshold &&
+         ( pixelInfo.channelIntensity < this.settings.pixelChannelIntensityThreshold ) ) {
       this.particlesRejectedBecausePixelIntensityLessThanThreshold += 1;
       return { isAccepted: false };
     }
 
-    if ( pixelInfo.rgbString == this.conversionContainerBackgroundRGB ) {
+    if ( this.settings.isRejectParticlesSameAsConversionContainerBackground &&
+         ( pixelInfo.rgbString == this.conversionContainerBackgroundRGB ) ) {
       pixelInfo.rgbaString == this.conversionContainerBackgroundRGBA
         ? this.particlesRejectedBecausePixelSameAsConversionContainerBackgroundRGBA += 1
         : this.particlesRejectedBecausePixelSameAsConversionContainerBackgroundRGB += 1;
@@ -629,10 +674,10 @@ function TrrEffect() {
 
   // ( imgObj, left, top, id )
   //----------------------------------------------------------------------------
-  this.createScene = function( options, /*Code to resume when done*/ callback ) {
+  this.createSceneContainer = function( options, /*Code to resume when done*/ callback ) {
     //--------------------------------------------------------------------------
     updateSettings( options );
-    console.log( " ..*6) createScene() *");
+    console.log( " ..*6) createSceneContainer() *");
 
     var container = document.createElement( "div" );
     container.id = this.settings.sceneId;
@@ -644,13 +689,13 @@ function TrrEffect() {
     container.style.backgroundColor  = this.settings.sceneBackgroundColor;
     container.style.border  = this.settings.sceneBorder;
 
-    console.log( " ..*6a) createScene() container.width: " +  container.style.width +
+    console.log( " ..*6a) createSceneContainer() container.width: " +  container.style.width +
                  ". container.height: " + container.style.height +
                  ". Container Offset left: " + container.style.left + ". top: " + container.style.top + "'*");
 
     if ( typeof callback == 'function' ) { callback( container ); return; }
     return container;
-  } // end: this.createScene function()
+  } // end: this.createSceneContainer function()
 
   //----------------------------------------------------------------------------
   this.createAnimationElements = function( options, /*Code to resume when done*/ callback ) {

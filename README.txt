@@ -59,8 +59,151 @@ View on Heroku:
   Deployed on Heroku at https://harp-greensock-getting-started-94037.herokuapp.com/
 
 ------------------------------
+maxNumOfParticles =  rows * cols,
+imageOffset = ( diag - image_width ) / 2,
+halfImageWidth = image_width / 2,
+halfImageHeigth = image_heigth / 2,
+halfGridSize = 0.5 * gridSize,
+xyOffset = imageOffset - halfImageWidth;
+
+console.log( " ..*5.2a) makeCartesianGridParticles(): BEGIN LOOP: " +
+         ". gridSize = " + gridSize + ". rows = " + rows +
+         ". columns = " + cols + ". Max number of particles = " +
+         maxNumOfParticles + ". *");
+
+// Calculate the "home position", i.e. the image xy of each filtered pixel.
+var isTerminateLoop = false,
+previousStartingX1 = 0;
+
+var previousStartingY1 = -halfGridSize;
+for ( var row = 0; row < rows; row++ ) {
+if ( isTerminateLoop) {
+break;
+}
+
+var y1 = previousStartingY1 + gridSize; // y1 = ( row + 0.5 ) * gridSize;
+previousStartingY1 = y1;
+
+previousStartingX1 = -halfGridSize; // 0.5 * gridSize
+
+for ( var col = 0; col < cols; col++ ) {
+var home_position_x = 0, home_position_y = 0;
+
+var x1 = previousStartingX1 + gridSize; // x1 = ( col + 0.5 ) * gridSize;
+previousStartingX1 = x1;
+
+y1 = previousStartingY1; // y1 = ( row + 0.5 ) * gridSize;
+
+//x1 -= x1Adjustment; // x1 -= ( diag - image_width ) / 2;
+//x1 -= halfImageWidth; // x1 -= image_width / 2;
+
+//var x1 = 0;
+//x1 = ( col + 0.5 ) * gridSize;
+//x1 -= ( diag - image_width ) / 2;
+//x1 -= image_width / 2;
+x1 = xyOffset;
+
+//var y1 = 0;
+//y1 = ( row + 0.5 ) * gridSize;
+//y1 -= ( diag - image_heigth ) / 2;
+//y1 -= image_heigth / 2;
+y1 = xyOffset;
+
+home_position_x = x1 * cosAngle - y1 * sinAngle; // home_position_x = x1 * Math.cos(angle) - y1 * Math.sin(angle);
+home_position_y = x1 * sinAngle + y1 * cosAngle; // home_position_y = x1 * Math.sin(angle) + y1 * Math.cos(angle);
+home_position_x += halfImageWidth; // home_position_x += image_width / 2;
+home_position_y += halfImageHeigth; // home_position_y += image_heigth / 2;
 
 ================
+
+  //----------------------------------------------------------------------------
+  this.makeCartesianGridParticles = function( options, /*Code to resume when done*/ callback ) {
+    //--------------------------------------------------------------------------
+    updateSettings( options );
+    console.log( " ..*5.2) makeCartesianGridParticles() for id: " + this.settings.id +
+                 ". Particles Home position Offset left: " + this.settings.particlesHomeOffsetLeft +
+                 ". top: " + this.settings.particlesHomeOffsetTop +
+                 ". pixelsPerCluster: " + this.settings.pixelsPerCluster + ".");
+
+    // Create local variables to reduce loop overhead.
+    var particles = [],
+        homeOffsetLeft = this.settings.particlesHomeOffsetLeft,
+        homeOffsetTop = this.settings.particlesHomeOffsetTop,
+        pixelsPerCluster = this.settings.pixelsPerCluster,
+        image_width = this.settings.img.width,
+        image_heigth = this.settings.img.height,
+        diagonal = Math.sqrt( (image_width * image_width) + (image_heigth * image_heigth) ),
+        gridSize = this.settings.maxHalftoneDotSize * diagonal,
+        angle = this.settings.rgbChannelAngle,
+        cosAngle = Math.cos(angle),
+        sinAngle = Math.sin(angle),
+        diag = Math.max( image_width, image_heigth ) * ROOT_2,
+        cols = Math.ceil( diag / gridSize ),
+        rows = Math.ceil( diag / gridSize ),
+        maxNumOfParticles =  rows * cols,
+        x1Adjustment = ( diag - image_width ) / 2,
+        y1Adjustment = ( diag - image_heigth ) / 2,
+        halfImageWidth = image_width / 2,
+        halfImageHeigth = image_heigth / 2,
+        x1Velocity = 0.5 * gridSize;
+
+    console.log( " ..*5.2a) makeCartesianGridParticles(): BEGIN LOOP: " +
+                 ". gridSize = " + gridSize + ". rows = " + rows +
+                 ". columns = " + cols + ". Max number of particles = " +
+                 maxNumOfParticles + ". *");
+
+    var isTerminateLoop = false;
+    for ( var row = 0; row < rows; row++ ) {
+      if ( isTerminateLoop) {
+        break;
+      }
+      var previousStartingX1 = x1Velocity; // 0.5 * gridSize
+      for ( var col = 0; col < cols; col++ ) {
+        var home_position_x = 0, y1 = 0, home_position_y = 0;
+
+        // x1 = ( col + 0.5 ) * gridSize;
+        //var x1 = previousStartingX1 + gridSize; // x1 = ( col + 0.5 ) * gridSize;
+        //previousStartingX1 = x1;
+        var x1 = ( col + 0.5 ) * gridSize;
+        y1 = ( row + 0.5 ) * gridSize; // y1 = ( row + 0.5 ) * gridSize;
+
+        x1 -= x1Adjustment; // x1 -= ( diag - image_width ) / 2;
+        y1 -= y1Adjustment; // y1 -= ( diag - image_heigth ) / 2;
+        x1 -= halfImageWidth; // x1 -= image_width / 2;
+        y1 -= halfImageHeigth; // y1 -= image_heigth / 2;
+        home_position_x = x1 * cosAngle - y1 * sinAngle; // home_position_x = x1 * Math.cos(angle) - y1 * Math.sin(angle);
+        home_position_y = x1 * sinAngle + y1 * cosAngle; // home_position_y = x1 * Math.sin(angle) + y1 * Math.cos(angle);
+        home_position_x += halfImageWidth; // home_position_x += image_width / 2;
+        home_position_y += halfImageHeigth; // home_position_y += image_heigth / 2;
+
+        // Returns null if rejected. Else returns Particle.
+        // NOTE: rejected particle locations just stay whatever the canvas
+        // background/fill color is.
+        var filterResults = this.particleFilter( this.settings.rgbChannel, home_position_x, home_position_y );
+        if ( filterResults.isAccepted ) {
+          particles.push( {
+            x: filterResults.x + homeOffsetLeft,
+            y: filterResults.y+ homeOffsetTop,
+            r: filterResults.pixelChannelIntensity * gridSize,
+          });
+        }
+      } // end for (col)
+    } // end for (row)
+    console.log( " ..*5.2b) makeCartesianGridParticles(): END LOOP: particles[].len = " +
+                 particles.length + ". Out of " + maxNumOfParticles + " possible. " +
+                 "Particles Rejected Because Particle Is Out Of Bounds = '" +
+                 this.particlesRejectedBecauseParticleIsOutOfBounds +
+                 "'. Particles Rejected Because Pixel Intensity Less Than Threshold = '" +
+                 this.particlesRejectedBecausePixelIntensityLessThanThreshold +
+                 "'. Particles Rejected Because Pixel Same As Conversion Container Background RGBA = '" +
+                 this.particlesRejectedBecausePixelSameAsConversionContainerBackgroundRGBA +
+                 "'. Particles Rejected Because Pixel Same As Conversion Container Background RGB = '" +
+                 this.particlesRejectedBecausePixelSameAsConversionContainerBackgroundRGB +
+                 "'. *");
+    if ( typeof callback == 'function' ) { callback( particles ); return; }
+     return particles;
+  } // end: this.makeParticles function()
+=========================
 
   //----------------------------------------------------------------------------
   this.particleFilter = function( rgbChannel, x, y ) {
