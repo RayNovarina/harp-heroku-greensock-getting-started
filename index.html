@@ -260,14 +260,13 @@ function TrrEffect() {
     // 0 and 255 (included). sarah.jpg imgData.len = '582400'
     this.imgDataObj = ctx.getImageData( 0, 0, this.imgWidth, this.imgHeight );
     this.imgData = this.imgDataObj.data;
-    this.imgDataBackgroundRGBA = "rgba( "    + this.imgData[0] + ", " + this.imgData[1] +
-    														 ", " + this.imgData[2] + ", " + this.imgData[3] +
-    														 " )";
-    this.effectsData.canvasBackgroundColor = this.imgDataBackgroundRGBA;
+    this.imgDataBackgroundRGBA = pixelToRgbxString( this.imgData, 0, true );
+    this.imgDataBackgroundRGB = pixelToRgbxString( this.imgData, 0, false );
     console.log( " ..*3.1 getImgData(): imgData.character.len = '" + this.imgData.length +
     						 "'. imgData.RGBA_arrayCells = '" + this.imgData.length / 4 +
     						 "'. imgWidth = '" + this.imgWidth + "'. imgHeight = '" + this.imgHeight +
-    						 "'. Background RGBA() = '" + this.imgDataBackgroundRGBA + "' *");
+    						 "'. Image Background RGB() = '" + this.imgDataBackgroundRGB +
+                 "'. Image Background RGBA() = '" + this.imgDataBackgroundRGBA + "' *");
     if ( typeof callback == 'function' ) { callback(); return; }
   } // end: this.getImgData function()
 
@@ -295,7 +294,8 @@ function TrrEffect() {
       sceneHeight: 436,
       sceneLeft: 0,
       sceneTop: 0,
-      sceneBackgroundColor: '#E7F1F7',
+      sceneBackgroundColor: '#E7F1F7', // rgb(231, 241, 247) rgba(231, 241, 247, 1)
+      //  background color of Climate Corp profile photo for Meg: rgb(234, 233, 238) #eae9ee
       sceneBorder: '',
     },
     /*2-Resume here when done*/ function( scene ) {
@@ -483,9 +483,13 @@ function TrrEffect() {
     this.settings.pixelChannelIntensityThreshold = 0.05;
     this.settings.imageScale = 1.0; // canvas.width / imgWidth;
     this.settings.rgbChannelAngle = RGB_CHANNEL_ANGLES[ this.settings.rgbChannel ];
+    this.conversionContainerBackgroundRGB = this.imgDataBackgroundRGB;
+    this.conversionContainerBackgroundRGBA = this.imgDataBackgroundRGBA;
 
     this.particlesRejectedBecauseParticleIsOutOfBounds = 0;
     this.particlesRejectedBecausePixelIntensityLessThanThreshold = 0;
+    this.particlesRejectedBecausePixelSameAsConversionContainerBackgroundRGB = 0;
+    this.particlesRejectedBecausePixelSameAsConversionContainerBackgroundRGBA = 0;
 
     var particles = [],
         homeOffsetLeft = this.settings.particlesHomeOffsetLeft,
@@ -545,6 +549,10 @@ function TrrEffect() {
                  this.particlesRejectedBecauseParticleIsOutOfBounds +
                  "'. Particles Rejected Because Pixel Intensity Less Than Threshold = '" +
                  this.particlesRejectedBecausePixelIntensityLessThanThreshold +
+                 "'. Particles Rejected Because Pixel Same As Conversion Container Background RGBA = '" +
+                 this.particlesRejectedBecausePixelSameAsConversionContainerBackgroundRGBA +
+                 "'. Particles Rejected Because Pixel Same As Conversion Container Background RGB = '" +
+                 this.particlesRejectedBecausePixelSameAsConversionContainerBackgroundRGB +
                  "'. *");
     if ( typeof callback == 'function' ) { callback( particles ); return; }
      return particles;
@@ -553,28 +561,6 @@ function TrrEffect() {
   //----------------------------------------------------------------------------
   this.particleFilter = function( rgbChannel, x, y ) {
     //----------------------------------------------------------------------------
-    var pixelChannelIntensity = this.getPixelChannelIntensity( x, y, rgbChannel );
-    if ( pixelChannelIntensity == 0 ) {
-      return { isAccepted: false };
-    }
-    // Returns null if rejected. Else returns Particle.
-    // NOTE: rejected particle locations just remain whatever the canvas
-    // background/fill color is.
-    if ( pixelChannelIntensity < this.settings.pixelChannelIntensityThreshold ) {
-      this.particlesRejectedBecausePixelIntensityLessThanThreshold += 1;
-      return { isAccepted: false };
-    }
-    return {
-      isAccepted: true,
-      x: x,
-      y: y,
-      pixelChannelIntensity: pixelChannelIntensity,
-    };
-  } // end this.particleFilter()
-
-  //----------------------------------------------------------------------------
-  this.getPixelChannelIntensity = function( x, y, rgbChannel ) {
-    //----------------------------------------------------------------------------
     if (this.settings.imageScale !== 1.0 ) {
         x = Math.round( x / this.settings.imageScale);
         y = Math.round( y / this.settings.imageScale);
@@ -582,21 +568,51 @@ function TrrEffect() {
       x = Math.round( x );
       y = Math.round( y );
     }
+
     if ( x < 0 || x > this.settings.img.width ||
          y < 0 || y > this.settings.img.height ) {
       this.particlesRejectedBecauseParticleIsOutOfBounds += 1;
-      return 0;
+      return { isAccepted: false };
     }
+
+    var pixelInfo = this.getPixelInfo( x, y, rgbChannel );
+
+    if ( pixelInfo.channelIntensity < this.settings.pixelChannelIntensityThreshold ) {
+      this.particlesRejectedBecausePixelIntensityLessThanThreshold += 1;
+      return { isAccepted: false };
+    }
+
+    if ( pixelInfo.rgbString == this.conversionContainerBackgroundRGB ) {
+      pixelInfo.rgbaString == this.conversionContainerBackgroundRGBA
+        ? this.particlesRejectedBecausePixelSameAsConversionContainerBackgroundRGBA += 1
+        : this.particlesRejectedBecausePixelSameAsConversionContainerBackgroundRGB += 1;
+      return { isAccepted: false };
+    }
+
+    return {
+      isAccepted: true,
+      x: x,
+      y: y,
+      pixelChannelIntensity: pixelInfo.channelIntensity,
+    };
+  } // end this.particleFilter()
+
+  //----------------------------------------------------------------------------
+  this.getPixelInfo = function( x, y, rgbChannel ) {
+    //--------------------------------------------------------------------------
     // this.imgData Is a Uint8ClampedArray representing a one-dimensional
     // array containing the data in the RGBA order, with integer values between
     // 0 and 255 (included). sarah.jpg imgData.len = '582400'
     var pixelIndex = ( x + y * this.settings.img.width ) * 4;
-    if ( rgbChannel === 'lum') {
-			channelRgbValue = this.getPixelLum( pixelIndex );
-		} else {
-      channelRgbValue = this.imgData[ pixelIndex + this.settings.rgbChannelOffset ]; // get the 'blue' value of the rgba item.
-    }
-    return 1 - (channelRgbValue / 255);
+    var pixelChannelValue = rgbChannel === 'lum'
+          ? this.getPixelLum( pixelIndex )
+          : this.imgData[ pixelIndex + this.settings.rgbChannelOffset ]; // get the 'blue' value of the rgba item.
+    pixelChannelValue =  1 - (pixelChannelValue / 255);
+    return {
+      channelIntensity: pixelChannelValue,
+      rgbaString: pixelToRgbxString( this.imgData, pixelIndex, true ),
+      rgbString: pixelToRgbxString( this.imgData, pixelIndex, false ),
+    };
   } // end getPixelChannelIntensity()
 
   //----------------------------------------------------------------------------
@@ -714,6 +730,18 @@ function getRandom( max, min ) {
   //----------------------------------------------------------------------------
   return Math.floor( Math.random() * ( 1 + max - min ) + min );
 } // end function getRandom()
+
+//------------------------------------------------------------------------------
+function pixelToRgbxString( pixelArray, pixelIndex, isIncludeA ) {
+  //----------------------------------------------------------------------------
+  return "rgb"   + (isIncludeA ? "a" : "") +
+         "( "    + pixelArray[ pixelIndex + 0 ] +
+            ", " + pixelArray[ pixelIndex + 1 ] +
+            ", " + pixelArray[ pixelIndex + 2 ] +
+            (isIncludeA ?
+            ", " + pixelArray[ pixelIndex + 3 ] : "") +
+         " )";
+} // end pixelToRgbxString()
 
 </script>
 
