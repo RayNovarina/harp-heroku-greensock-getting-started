@@ -440,6 +440,7 @@ function TrrEffect() {
       this.particlesRejectedBecausePixelIntensityLessThanThreshold = 0;
       this.particlesRejectedBecausePixelSameAsConversionContainerBackgroundRGB = 0;
       this.particlesRejectedBecausePixelSameAsConversionContainerBackgroundRGBA = 0;
+      this.particlesRejectedBecauseIsEveryNthPixell = 0;
       this.settings.rgbChannelOffset = RGB_CHANNEL_OFFSETS[ this.settings.rgbChannel ];
       this.settings.rgbChannelAngle = RGB_CHANNEL_ANGLES[ this.settings.rgbChannel ];
 
@@ -450,6 +451,7 @@ function TrrEffect() {
         maxHalftoneDotSize: 1/150,
         pixelChannelIntensityThreshold: 0.05,
         imageScale: 1.0, // canvas.width / imgWidth;
+        nthPixelToReject: 0, //4,
         pixelsPerCluster: 1,
         isRejectParticlesOutOfBounds: true,
         isRejectParticlesBelowIntensityThreshold: true,
@@ -494,11 +496,17 @@ function TrrEffect() {
   //----------------------------------------------------------------------------
   this.makeCartesianGridParticles = function( options, /*Code to resume when done*/ callback ) {
     //--------------------------------------------------------------------------
+    options.isRejectEveryNthPixell = options.nthPixelToReject > 0;
     updateSettings( options );
     console.log( " ..*5.2) makeCartesianGridParticles() for id: " + this.settings.id +
                  ". Particles Home position Offset left: " + this.settings.particlesHomeOffsetLeft +
                  ". top: " + this.settings.particlesHomeOffsetTop +
+                 ". maxHalftoneDotSize: " + this.settings.maxHalftoneDotSize +
+                 ". pixelChannelIntensityThreshold: " + this.settings.pixelChannelIntensityThreshold +
+                 ". imageScale: " + this.settings.imageScale +
+                 ". nthPixelToReject: " + this.settings.nthPixelToReject +
                  ". pixelsPerCluster: " + this.settings.pixelsPerCluster +
+                 ". isRejectEveryNthPixell: " + this.settings.isRejectEveryNthPixell +
                  ". isRejectParticlesOutOfBounds: " + this.settings.isRejectParticlesOutOfBounds +
                  ". isRejectParticlesBelowIntensityThreshold: " + this.settings.isRejectParticlesBelowIntensityThreshold +
                  ". isRejectParticlesSameAsConversionContainerBackground: " + this.settings.isRejectParticlesSameAsConversionContainerBackground +                 ".");
@@ -532,29 +540,19 @@ function TrrEffect() {
     // Calculate the "home position", i.e. the image xy of each filtered pixel.
     var isTerminateLoop = false,
         previousStartingX1 = 0;
-
     var previousStartingY1 = -halfGridSize;
     for ( var row = 0; row < rows; row++ ) {
       if ( isTerminateLoop) {
         break;
       }
-
       var y1 = previousStartingY1 + gridSize; // y1 = ( row + 0.5 ) * gridSize;
       previousStartingY1 = y1;
-
       previousStartingX1 = -halfGridSize; // 0.5 * gridSize
-
       for ( var col = 0; col < cols; col++ ) {
         var home_position_x = 0, home_position_y = 0;
-
         var x1 = previousStartingX1 + gridSize; // x1 = ( col + 0.5 ) * gridSize;
         previousStartingX1 = x1;
-
         y1 = previousStartingY1; // y1 = ( row + 0.5 ) * gridSize;
-
-        //x1 -= x1Adjustment; // x1 -= ( diag - image_width ) / 2;
-        //x1 -= halfImageWidth; // x1 -= image_width / 2;
-
         //var x1 = 0;
         //x1 = ( col + 0.5 ) * gridSize;
         //x1 -= ( diag - image_width ) / 2;
@@ -595,6 +593,8 @@ function TrrEffect() {
                  this.particlesRejectedBecausePixelSameAsConversionContainerBackgroundRGBA +
                  "'. Particles Rejected Because Pixel Same As Conversion Container Background RGB = '" +
                  this.particlesRejectedBecausePixelSameAsConversionContainerBackgroundRGB +
+                 "'. Particles Rejected Because Is Every Nth Pixell = '" +
+                 this.particlesRejectedBecauseIsEveryNthPixell +
                  "'. *");
     if ( typeof callback == 'function' ) { callback( particles ); return; }
      return particles;
@@ -610,6 +610,15 @@ function TrrEffect() {
       x = Math.round( x );
       y = Math.round( y );
     }
+
+  if ( this.settings.isRejectEveryNthPixell ) {
+    if ( y % this.settings.nthPixelToReject == 0 &&
+         x % this.settings.nthPixelToReject == 0 ) {
+      this.particlesRejectedBecauseIsEveryNthPixell += 1;
+      return { isAccepted: false };
+    }
+  }
+
 
   if ( this.settings.isRejectParticlesOutOfBounds &&
        ( x < 0 || x > this.settings.img.width ||
