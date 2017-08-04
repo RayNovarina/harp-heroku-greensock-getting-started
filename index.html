@@ -38,39 +38,110 @@ nicely with small objects and it is easy to integrate.
 -->
 
 <style type="text/css">
-  .buttons a {
+  .people {
+    position: absolute;
+    top: 6px;
+    left: 8px;
+  }
+  .people a {
       padding: 0 6px;
       text-decoration: underline;
       color: blue;
       cursor: pointer
   }
-  .buttons a:hover {
+  .people a:hover {
       color: green;
   }
-  .animationContainer {
-    width: 100%;
-    height: 100%;
-    background-color: red;
-    border: 4px solid yellow;
+
+  .actions {
+    position: absolute;
+    top: 6px;
+    left: 444px;
   }
+  .actions a {
+      padding: 0 6px;
+      text-decoration: underline;
+      color: blue;
+      cursor: pointer
+  }
+  .actions a:hover {
+      color: green;
+  }
+
+  .checkboxes {
+    position: absolute;
+    top: 6px;
+    left: 888px;
+  }
+  .checkboxes input {
+      margin-left: 0px;
+      padding: 0 6px;
+      text-decoration: underline;
+      color: blue;
+      cursor: pointer
+  }
+  .checkboxes input:hover {
+      color: green;
+  }
+
+  .profileContainer {
+    position: absolute;
+    top: 40px;
+    left: 4px;
+    width: 430px;
+    height: 438px;
+    background-color: blue;
+    border: 4px solid green;
+  }
+  .conversionContainer {
+    position: absolute;
+    top: 40px;
+    left: 446px;
+    width: 430px;
+    height: 438px;
+    background-color: yellow;
+    border: 4px solid black;
+  }
+  .animationContainer {
+    position: absolute;
+    top: 40px;
+    left: 888px;
+    width: 430px;
+    height: 438px;
+    background-color: brown;
+    border: 4px solid violet;
+  }
+
 </style>
 </head>
 
 <body>
 
-  <div class="buttons">
-    <a id="convert" style="margin-left: 680px;">CONVERT</a>
-    <a id="explode" style="margin-left: 10px;">EXPLODE!</a>
-    <a id="collaspe" style="margin-left: 10px;">COLLASPE!</a>
-    <a id="reset" style="margin-left: 10px;">RESET</a>
+  <div class="people">
+    <a id="newPhotoMike" style="margin-left: 170px;" photoTag="mike"
+       data-src="./images/mike_stern_422x436.jpg"
+    >Mike</a>
+    <a id="newPhotoMeg" style="margin-left: 10px;" photoTag="meg"
+       data-src="./images/meg_CC_422x436.jpg"
+    >Meg</a>
   </div>
 
-  <div id="animationContainer" class="animationContainer">
-    <div class="canvas-col" style="display: inline-block;">
-  		<img id="selectedPhoto" photoType="color" photoTag="mike"
-  				 src="./images/mike_stern_422x436.jpg" data-src=""
-      />
+  <div class="actions">
+    <a id="convert" style="margin-left: 0px;">CONVERT</a>
+    <a id="explode" style="margin-left: 10px;">EXPLODE!</a>
+    <a id="collapse" style="margin-left: 10px;">COLLAPSE!</a>
+    <!-- <a id="reset" style="margin-left: 10px;">RESET</a> -->
   </div>
+
+  <div class="checkboxes">
+    <input id="checkbox1" type="checkbox">&nbsp;TrrData
+  </div>
+
+  <div id="profileContainer" class="profileContainer">
+    <img id="selectedPhoto" photoType="color" photoTag="" src="" data-src="" />
+  </div>
+  <div id="conversionContainer" class="conversionContainer"></div>
+  <div id="animationContainer" class="animationContainer"></div>
 
 <script type="text/javascript">
 
@@ -87,18 +158,29 @@ $( document ).ready( function() {
   $( "#convert" ).click( function() {
     trrPlugin.convert();
     //trrPlugin.convert( {},
-    ///*1-Resume here when done*/ function() {
+    ///*1-Resume here when done/ function() {
     //var imgSrc = trrPlugin.settings.imgSrc;
-    ///*1-*/}.bind( trrPlugin ));
+    ///*1-/}.bind( trrPlugin ));
   });
   $( "#explode" ).click( function() {
     trrPlugin.explode( { tweenDuration: 3.0 } );
   });
-  $( "#collaspe" ).click( function() {
-    trrPlugin.collaspe();
+  $( "#collapse" ).click( function() {
+    trrPlugin.collapse();
   });
   $( "#reset" ).click( function() {
     trrPlugin.reset();
+  });
+  $( "#newPhotoMike" ).click( function( event ) {
+    trrPlugin.newPhoto( { photoType: "color", photoTag: $(this).attr('photoTag'),
+                          imgSrc: $(this).attr('data-src') } );
+  });
+  $( "#newPhotoMeg" ).click( function( event ) {
+    trrPlugin.newPhoto( { photoType: "color", photoTag: $(this).attr('photoTag'),
+                          imgSrc: $(this).attr('data-src') } );
+  });
+  $( "#checkbox1" ).click( function( event ) {
+    trrPlugin.useTrrData( { event: event } );
   });
   /*1-*/}.bind( trrPlugin ));
 }); //end $( document ).ready()
@@ -111,7 +193,9 @@ function TrrEffect() {
   console.log( " ..*2) TrrEffect() Create new TrrEffect instance. *");
   // Public CONSTANTS accessible via TrrEffect.xxx
   var TAU = Math.PI * 2;
-  var ROOT_2 = Math.sqrt(2);
+  var ROOT_2 = Math.sqrt( 2 );
+  var RGB_CHANNEL_OFFSETS = { red: 0, green: 1, blue: 2 };
+  var RGB_CHANNEL_ANGLES = { red: 1, green: 2.5, blue: 5, lum: 4 };
   var timeNow = new Date().getTime();
   var $el = $( '#selectedPhoto' );
 
@@ -122,10 +206,14 @@ function TrrEffect() {
     $img: $el,
     photoTag: $el.attr('photoTag'),
     photoType: $el.attr('photoType'),
+    isUseTrrData: false,
+    isActionsUseMovedConversionContainer: false,
   };
+  $( '#checkbox1' ).prop('checked', this.defaults.isUseTrrData);
   // Create settings for first time, will nit settings from defaults.
   this.settings = updateSettings( { timeNow: timeNow, id: 'mapTrrEffect_' + timeNow } );
 	this.particles = [];
+  this.conversionContainer = document.getElementById( 'conversionContainer' );
   this.animationContainer = document.getElementById( 'animationContainer' );
 
   // Public methods accessible via instance. or this.xxxx
@@ -146,47 +234,90 @@ function TrrEffect() {
     console.log( " ..*3a) newPhoto() img.onload() Loaded src: '" + $img.attr('src') +
                  "'. img.width: '" + img.width + "'. img.height: '" + img.height +
                  "'. *");
+    this.getImgData(
+    /*2-Resume here when done*/ function() {
     if ( typeof callback == 'function' ) { callback( img ); return; }
     return img;
-    /*1-*/}.bind( this ); // end img.onload function()
+    /*2-*/}.bind( this ));/*1-*/}.bind( this ); // end img.onload function()
 
     $img.attr('src', src); // causes photo to be loaded and rendered.
   } // end: this.newPhoto function()
+
+  //----------------------------------------------------------------------------
+  this.getImgData = function( /*Code to resume when done*/ callback ) {
+    //--------------------------------------------------------------------------
+    console.log( " ..*3.1 getImgData() *");
+
+    this.effectsData = { canvasBackgroundColor: '', particles: [] };
+    var canvasAndCtx = this.makeCanvasAndCtx();
+    var imgCanvas = canvasAndCtx.canvas;
+    var ctx = canvasAndCtx.ctx;
+    this.imgWidth = imgCanvas.width = this.settings.img.naturalWidth;
+    this.imgHeight = imgCanvas.height = this.settings.img.naturalHeight;
+    ctx.drawImage( this.settings.img, 0, 0 );
+    // ImageData.data Is a Uint8ClampedArray representing a one-dimensional
+    // array containing the data in the RGBA order, with integer values between
+    // 0 and 255 (included). sarah.jpg imgData.len = '582400'
+    this.imgDataObj = ctx.getImageData( 0, 0, this.imgWidth, this.imgHeight );
+    this.imgData = this.imgDataObj.data;
+    this.imgDataBackgroundRGBA = "rgba( "    + this.imgData[0] + ", " + this.imgData[1] +
+    														 ", " + this.imgData[2] + ", " + this.imgData[3] +
+    														 " )";
+    this.effectsData.canvasBackgroundColor = this.imgDataBackgroundRGBA;
+    console.log( " ..*3.1 getImgData(): imgData.character.len = '" + this.imgData.length +
+    						 "'. imgData.RGBA_arrayCells = '" + this.imgData.length / 4 +
+    						 "'. imgWidth = '" + this.imgWidth + "'. imgHeight = '" + this.imgHeight +
+    						 "'. Background RGBA() = '" + this.imgDataBackgroundRGBA + "' *");
+    if ( typeof callback == 'function' ) { callback(); return; }
+  } // end: this.getImgData function()
+
+  //----------------------------------------------------------------------------
+  this.makeCanvasAndCtx = function() {
+    //--------------------------------------------------------------------------
+  	var canvas = document.createElement('canvas');
+  	var ctx = canvas.getContext('2d');
+  	return { canvas:canvas, ctx:ctx };
+  } // end makeCanvasAndCtx()
 
   //----------------------------------------------------------------------------
   this.convert = function( options, /*Code to resume when done*/ callback ) {
     //--------------------------------------------------------------------------
     console.log( " ..*4.1) convert() *");
 
-    this.createParticleMap( { id: this.settings.id },
+    this.createParticleMap( {
+      id: this.settings.id
+    },
     /*1-Resume here when done*/ function( particles ) {
     this.particles = particles;
     this.createScene( {
-      sceneId: 'scene_' + this.settings.id,
-      sceneWidth: 600,
-      sceneHeight: 600,
+      sceneId: 'scene_Con_' + this.settings.id,
+      sceneWidth: 430,
+      sceneHeight: 436,
       sceneLeft: 0,
       sceneTop: 0,
       sceneBackgroundColor: '#E7F1F7',
-      sceneBorder: 'solid 4px green',
+      sceneBorder: '',
     },
     /*2-Resume here when done*/ function( scene ) {
     this.scene = scene;
     this.createAnimationElements( {
       animationElementWidth: 6,
       animationElementHeight: 6,
-      animationElementDotsColor: '#70C0EF',
+      animationElementColor: '#70C0EF',
+      animationElementOffsetX: -80,
+      animationElementOffsetY: -20,
     },
     /*3-Resume here when done*/ function() {
-    this.fadeIn( {},
-    /*4-Resume here when done*/ function() {
-    /*4-*/}.bind( this ));/*3-*/}.bind( this ));/*2-*/}.bind( this ));/*1-*/}.bind( this ));
+    // AnimationElements will display after append()
+    this.conversionContainer.appendChild( this.scene );
+    /*3-*/}.bind( this ));/*2-*/}.bind( this ));/*1-*/}.bind( this ));
     if ( typeof callback == 'function' ) { callback(); return; }
   } // end: this.convert function()
 
   //----------------------------------------------------------------------------
   this.explode = function( options, /*Code to resume when done*/ callback ) {
     //--------------------------------------------------------------------------
+    this.copyConversionContainerToAnimationContainer( {} ); // { isActionsUseMovedConversionContainer: true }
     var particleContainer = this.animationContainer,
         canvasParticles = $( particleContainer ).find( 'canvas' ),
         canvasParticlesLen = canvasParticles.length;
@@ -210,15 +341,50 @@ function TrrEffect() {
   } // end: this.explode function()
 
   //----------------------------------------------------------------------------
-  this.collaspe = function( options, /*Code to resume when done*/ callback ) {
+  this.copyConversionContainerToAnimationContainer = function( options, /*Code to resume when done*/ callback ) {
     //--------------------------------------------------------------------------
-    console.log( " ..*4.3) collaspe() *");
+    // local option overrides defaults.
+    var isUseConversionScene = options.isActionsUseMovedConversionContainer
+      ? options.isActionsUseMovedConversionContainer
+      : this.settings.isActionsUseMovedConversionContainer;
+    console.log( " ..*4.2.1) copyConversionContainerToAnimationContainer() " +
+                 "isUseConversionScene: '" + isUseConversionScene +
+                 ( isUseConversionScene ? "'. Copy nothing. animationContainer uses conversionContainer scene"
+                                        : "'. Copy' scene in conversionContainer to the animationContainer" ) +
+                 "'. *");
 
+    if ( isUseConversionScene ) {
+      this.animationContainer.appendChild( this.scene );
+      if ( typeof callback == 'function' ) { callback(); return; }
+      return;
+    }
+
+    // NOTE: Most scene options are used from scene created for the conversionContainer.
+    this.createScene( {
+      sceneId: 'scene_Ani_' + this.settings.id,
+    },
+    /*1-Resume here when done*/ function( scene ) {
+    this.scene = scene;
+    // NOTE: Use same options used for the conversionContainer elements.
+    this.createAnimationElements( {},
+    /*2-Resume here when done*/ function() {
+    // AnimationElements will display after append()
+    this.animationContainer.appendChild( this.scene );
+    /*2-*/}.bind( this ));/*1-*/}.bind( this ));
     if ( typeof callback == 'function' ) { callback(); return; }
-  } // end: this.collaspe function()
+  } // end: this.copyConversionContainerToAnimationContainer function()
 
   //----------------------------------------------------------------------------
-  this.reset = function( options, /*Code to resume when done*/ callback ) {
+  this.collapse = function( options, /*Code to resume when done*/ callback ) {
+    //--------------------------------------------------------------------------
+    console.log( " ..*4.3) collapse() *");
+
+    if ( typeof callback == 'function' ) { callback(); return; }
+  } // end: this.collapse function()
+
+  /*
+  //----------------------------------------------------------------------------
+  this.reset = function( options, /*Code to resume when done/ callback ) {
     //--------------------------------------------------------------------------
     console.log( " ..*4.4) reset() plugIn #" + _this.settings.id +
                  ". Empty containerId: " + _this.animationContainer.id +
@@ -226,7 +392,7 @@ function TrrEffect() {
     $( "#" + _this.settings.id ).empty().remove();
     $(_this.animationContainer).find( 'canvas' ).remove();
 
-//NOTE: still have <div id='scene_undefined'> in DOM.
+    //NOTE: still have <div id='scene_undefined'> in DOM.
 
     timeNow = new Date().getTime();
     _this.settings = _this.defaults;
@@ -234,21 +400,40 @@ function TrrEffect() {
   	_this.particles = [];
     // Select, display default photo.
     _this.newPhoto( { photoType: "color", photoTag: "meg", imgSrc: './images/meg_CC_422x436.jpg' },
-    /*1-Resume here when done*/ function() {
+    /*1-Resume here when done* function() {
     if ( typeof callback == 'function' ) { callback(); return; }
-  /*1-*/}.bind( this ));
+  /*1-*}.bind( this ));
   } // end: this.reset function()
+  */
+
+  //----------------------------------------------------------------------------
+  this.useTrrData = function( options, /*Code to resume when done*/ callback ) {
+    //--------------------------------------------------------------------------
+    console.log( " ..*4.5) useTrrData() Box checked = '" + $( '#checkbox1' ).prop('checked') + "'. *");
+    this.settings.isUseTrrData = $( '#checkbox1' ).prop('checked');
+    if ( typeof callback == 'function' ) { callback(); return; }
+  } // end: this.useTrrData function()
 
   //----------------------------------------------------------------------------
   this.createParticleMap = function( options, /*Code to resume when done*/ callback ) {
     //--------------------------------------------------------------------------
-    console.log( " ..*5) createParticleMap() for id: " + options.id + " *");
-    var particles = this.makeParticlesFromTrrMap( {
-      id: options.id,
-      effectsDataAsJSONstring: effectsDataForRender[0].effectsDataAsJSONstring,
-      canvasParticlesOffsetLeft: 80,
-      canvasParticlesOffsetTop: 20,
-    } );
+    console.log( " ..*5) createParticleMap() for id: '" + options.id +
+                 "'. useTrrData: '" + this.settings.isUseTrrData + "'. *");
+    var particles = [];
+    if ( this.settings.isUseTrrData ) {
+      particles = this.makeParticlesFromTrrMap( {
+        id: options.id,
+        effectsDataAsJSONstring: effectsDataForRender[0].effectsDataAsJSONstring,
+        particlesHomeOffsetLeft: 80,
+        particlesHomeOffsetTop: 20,
+      } );
+    } else {
+      particles = this.makeCartesianGridParticles( {
+        id: options.id,
+        particlesHomeOffsetLeft: 82,
+        particlesHomeOffsetTop: 20,
+      } );
+    }
     console.log( " ..*5a) createParticleMap() Created particles[" + particles.length + "] *");
     if ( typeof callback == 'function' ) { callback( particles ); return; }
     return particles;
@@ -262,20 +447,20 @@ function TrrEffect() {
     console.log( " ..*5.1) makeParticlesFromTrrMap() for id: " + this.settings.id +
                  ". effectsData.particles.len = " + effectsData.particles.length +
                  ". effectsDataAsJSONstring.len = " + this.settings.effectsDataAsJSONstring.length +
-                 ". Canvas Particles Offset left: " + this.settings.canvasParticlesOffsetLeft +
-                 ". top: " + this.settings.canvasParticlesOffsetTop + ".");
+                 ". Canvas Particles Home position Offset left: " + this.settings.particlesHomeOffsetLeft +
+                 ". top: " + this.settings.particlesHomeOffsetTop + ".");
 
     var particles = new Array();
     var effectsDataParticles = effectsData.particles,
         edpParticle = {},
-        left = this.settings.canvasParticlesOffsetLeft,
-        top = this.settings.canvasParticlesOffsetTop;
+        homeOffsetLeft = this.settings.particlesHomeOffsetLeft,
+        homeOffsetTop = this.settings.particlesHomeOffsetTop;
 
     for( var i = 0; i < (effectsData.particles.length); i += 1 ) {
         edpParticle = effectsDataParticles[ i ];
         particles.push( {
-            x: edpParticle.x + left,
-            y: edpParticle.y + top,
+            x: edpParticle.x + homeOffsetLeft,
+            y: edpParticle.y + homeOffsetTop,
             r: edpParticle.r,
         });
     } //end for( var n )
@@ -283,6 +468,148 @@ function TrrEffect() {
     if ( typeof callback == 'function' ) { callback( particles ); return; }
     return particles;
   } // end: this.makeParticlesFromTrrMap function()
+
+  //----------------------------------------------------------------------------
+  this.makeCartesianGridParticles = function( options, /*Code to resume when done*/ callback ) {
+    //--------------------------------------------------------------------------
+    updateSettings( options );
+    console.log( " ..*5.2) makeCartesianGridParticles() for id: " + this.settings.id +
+                 ". Particles Home position Offset left: " + this.settings.particlesHomeOffsetLeft +
+                 ". top: " + this.settings.particlesHomeOffsetTop + ".");
+
+    this.settings.rgbChannel = 'blue'; // this.settings.halftoneColor
+    this.settings.rgbChannelOffset = RGB_CHANNEL_OFFSETS[ this.settings.rgbChannel ];
+    this.settings.maxHalftoneDotSize = 1/150;
+    this.settings.pixelChannelIntensityThreshold = 0.05;
+    this.settings.imageScale = 1.0; // canvas.width / imgWidth;
+    this.settings.rgbChannelAngle = RGB_CHANNEL_ANGLES[ this.settings.rgbChannel ];
+
+    this.particlesRejectedBecauseParticleIsOutOfBounds = 0;
+    this.particlesRejectedBecausePixelIntensityLessThanThreshold = 0;
+
+    var particles = [],
+        homeOffsetLeft = this.settings.particlesHomeOffsetLeft,
+        homeOffsetTop = this.settings.particlesHomeOffsetTop,
+        image_width = this.settings.img.width,
+        image_heigth = this.settings.img.height,
+        diagonal = Math.sqrt( (image_width * image_width) + (image_heigth * image_heigth) ),
+        gridSize = this.settings.maxHalftoneDotSize * diagonal,
+        angle = this.settings.rgbChannelAngle,
+        diag = Math.max( image_width, image_heigth ) * ROOT_2,
+        cols = Math.ceil( diag / gridSize ),
+        rows = Math.ceil( diag / gridSize ),
+        maxNumOfParticles =  rows * cols;
+
+    console.log( " ..*5.2a) makeCartesianGridParticles(): BEGIN LOOP: " +
+                 ". gridSize = " + gridSize + ". rows = " + rows +
+                 ". columns = " + cols + ". Max number of particles = " +
+                 maxNumOfParticles + ". *");
+
+    var isTerminateLoop = false;
+    for ( var row = 0; row < rows; row++ ) {
+      if ( isTerminateLoop) {
+        break;
+      }
+      for ( var col = 0; col < cols; col++ ) {
+        var x1 = 0, home_position_x = 0, y1 = 0, home_position_y = 0;
+        x1 = ( col + 0.5 ) * gridSize;
+        y1 = ( row + 0.5 ) * gridSize;
+        x1 -= ( diag - image_width ) / 2;
+        y1 -= ( diag - image_heigth ) / 2;
+        x1 -= image_width / 2;
+        y1 -= image_heigth / 2;
+        home_position_x = x1 * Math.cos(angle) - y1 * Math.sin(angle);
+        home_position_y = x1 * Math.sin(angle) + y1 * Math.cos(angle);
+        home_position_x += image_width / 2;
+        home_position_y += image_heigth / 2;
+
+        // Returns null if rejected. Else returns Particle.
+        // NOTE: rejected particle locations just stay whatever the canvas
+        // background/fill color is.
+        var filterResults = this.particleFilter( this.settings.rgbChannel, home_position_x, home_position_y );
+        if ( filterResults.isAccepted ) {
+          particles.push( {
+            // NOTE: x2, y2 is the 'home' location on the image.
+            x: filterResults.x + homeOffsetLeft,
+            y: filterResults.y+ homeOffsetTop,
+            //rgbaValue: particle.rgbaValue,
+            //dotRadius: particle.naturalSize,
+            r: filterResults.pixelChannelIntensity * gridSize,
+          });
+        }
+      } // end for (col)
+    } // end for (row)
+    console.log( " ..*5.2b) makeCartesianGridParticles(): END LOOP: particles[].len = " +
+                 particles.length + ". Out of " + maxNumOfParticles + " possible. " +
+                 "Particles Rejected Because Particle Is Out Of Bounds = '" +
+                 this.particlesRejectedBecauseParticleIsOutOfBounds +
+                 "'. Particles Rejected Because Pixel Intensity Less Than Threshold = '" +
+                 this.particlesRejectedBecausePixelIntensityLessThanThreshold +
+                 "'. *");
+    if ( typeof callback == 'function' ) { callback( particles ); return; }
+     return particles;
+  } // end: this.makeParticles function()
+
+  //----------------------------------------------------------------------------
+  this.particleFilter = function( rgbChannel, x, y ) {
+    //----------------------------------------------------------------------------
+    var pixelChannelIntensity = this.getPixelChannelIntensity( x, y, rgbChannel );
+    if ( pixelChannelIntensity == 0 ) {
+      return { isAccepted: false };
+    }
+    // Returns null if rejected. Else returns Particle.
+    // NOTE: rejected particle locations just remain whatever the canvas
+    // background/fill color is.
+    if ( pixelChannelIntensity < this.settings.pixelChannelIntensityThreshold ) {
+      this.particlesRejectedBecausePixelIntensityLessThanThreshold += 1;
+      return { isAccepted: false };
+    }
+    return {
+      isAccepted: true,
+      x: x,
+      y: y,
+      pixelChannelIntensity: pixelChannelIntensity,
+    };
+  } // end this.particleFilter()
+
+  //----------------------------------------------------------------------------
+  this.getPixelChannelIntensity = function( x, y, rgbChannel ) {
+    //----------------------------------------------------------------------------
+    if (this.settings.imageScale !== 1.0 ) {
+        x = Math.round( x / this.settings.imageScale);
+        y = Math.round( y / this.settings.imageScale);
+    } else {
+      x = Math.round( x );
+      y = Math.round( y );
+    }
+    if ( x < 0 || x > this.settings.img.width ||
+         y < 0 || y > this.settings.img.height ) {
+      this.particlesRejectedBecauseParticleIsOutOfBounds += 1;
+      return 0;
+    }
+    // this.imgData Is a Uint8ClampedArray representing a one-dimensional
+    // array containing the data in the RGBA order, with integer values between
+    // 0 and 255 (included). sarah.jpg imgData.len = '582400'
+    var pixelIndex = ( x + y * this.settings.img.width ) * 4;
+    if ( rgbChannel === 'lum') {
+			channelRgbValue = this.getPixelLum( pixelIndex );
+		} else {
+      channelRgbValue = this.imgData[ pixelIndex + this.settings.rgbChannelOffset ]; // get the 'blue' value of the rgba item.
+    }
+    return 1 - (channelRgbValue / 255);
+  } // end getPixelChannelIntensity()
+
+  //----------------------------------------------------------------------------
+  this.getPixelLum = function( pixelIndex ) {
+    //----------------------------------------------------------------------------
+    var r = this.imgData[ pixelIndex + 0 ] / 255;
+    var g = this.imgData[ pixelIndex + 1 ] / 255;
+    var b = this.imgData[ pixelIndex + 2 ] / 255;
+    var max = Math.max( r, g, b );
+    var min = Math.min( r, g, b );
+    return ( max + min ) / 2;
+  } // end getPixelLum()
+
 
   // ( imgObj, left, top, id )
   //----------------------------------------------------------------------------
@@ -320,7 +647,9 @@ function TrrEffect() {
         particlesLen = particles.length,
         canvasWidth = this.settings.animationElementWidth,
         canvasHeight = this.settings.animationElementHeight,
-        dotsColor = this.settings.animationElementDotsColor;
+        dotsColor = this.settings.animationElementColor,
+        canvasOffsetX = this.settings.animationElementOffsetX,
+        canvasOffsetY = this.settings.animationElementOffsetY;
     console.log( " ..*7) createAnimationElements() for " + particles.length + " particles. " +
                  " Each canvasElement has width: '" + canvasWidth +
                  "'. height: '" + canvasHeight + "'. dotsColor: '" + dotsColor + "'. *");
@@ -333,8 +662,8 @@ function TrrEffect() {
 
       canvas.width = canvasWidth;
     	canvas.height = canvasHeight;
-    	canvas.style.left = particle.x + "px";
-    	canvas.style.top = particle.y + "px";
+    	canvas.style.left = particle.x + canvasOffsetX + "px";
+    	canvas.style.top = particle.y + canvasOffsetY + "px";
   		canvas.style.position = 'absolute';
 
       // NOTE: Callbacks available? else it seems browsers is busy making
@@ -354,13 +683,18 @@ function TrrEffect() {
     return scene;
   } // end: this.createAnimationElements function()
 
+  /*
+  this.fadeIn( {},
+  /*4-Resume here when done/ function() {
+  /*4-/}.bind( this ));
   //----------------------------------------------------------------------------
-  this.fadeIn = function( options, /*Code to resume when done*/ callback ) {
+  this.fadeIn = function( options, /*Code to resume when done/ callback ) {
     //--------------------------------------------------------------------------
     console.log( " ..*8) fadeIn() *");
     this.animationContainer.appendChild( this.scene );
     if ( typeof callback == 'function' ) { callback(); return; }
   } // end: this.fadeIn function()
+  */
 
   // Private methods in context of plugIn instance, i.e. this
   // // NOTE: Private methods MUST use _this to get 'this' for this instance.

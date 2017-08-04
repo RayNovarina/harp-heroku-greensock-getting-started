@@ -63,6 +63,67 @@ View on Heroku:
 ================
 
   //----------------------------------------------------------------------------
+  this.particleFilter = function( rgbChannel, x, y ) {
+    //----------------------------------------------------------------------------
+    var pixelChannelIntensity = this.getPixelChannelIntensity( x, y, rgbChannel );
+    if ( pixelChannelIntensity == 0 ) {
+      return { isAccepted: false };
+    }
+    // Returns null if rejected. Else returns Particle.
+    // NOTE: rejected particle locations just remain whatever the canvas
+    // background/fill color is.
+    if ( pixelChannelIntensity < this.settings.pixelChannelIntensityThreshold ) {
+      this.particlesRejectedBecausePixelIntensityLessThanThreshold += 1;
+      return { isAccepted: false };
+    }
+    return {
+      isAccepted: true,
+      x: x,
+      y: y,
+      pixelChannelIntensity: pixelChannelIntensity,
+    };
+  } // end this.particleFilter()
+
+  //----------------------------------------------------------------------------
+  this.getPixelChannelIntensity = function( x, y, rgbChannel ) {
+    //--------------------------------------------------------------------------
+    if (this.settings.imageScale !== 1.0 ) {
+        x = Math.round( x / this.settings.imageScale);
+        y = Math.round( y / this.settings.imageScale);
+    } else {
+      x = Math.round( x );
+      y = Math.round( y );
+    }
+    if ( x < 0 || x > this.settings.img.width ||
+         y < 0 || y > this.settings.img.height ) {
+      this.particlesRejectedBecauseParticleIsOutOfBounds += 1;
+      return 0;
+    }
+    // this.imgData Is a Uint8ClampedArray representing a one-dimensional
+    // array containing the data in the RGBA order, with integer values between
+    // 0 and 255 (included). sarah.jpg imgData.len = '582400'
+    var pixelIndex = ( x + y * this.settings.img.width ) * 4;
+    if ( rgbChannel === 'lum') {
+			channelRgbValue = this.getPixelLum( pixelIndex );
+		} else {
+      channelRgbValue = this.imgData[ pixelIndex + this.settings.rgbChannelOffset ]; // get the 'blue' value of the rgba item.
+    }
+    return 1 - (channelRgbValue / 255);
+  } // end getPixelChannelIntensity()
+
+  //----------------------------------------------------------------------------
+  this.getPixelLum = function( pixelIndex ) {
+    //----------------------------------------------------------------------------
+    var r = this.imgData[ pixelIndex + 0 ] / 255;
+    var g = this.imgData[ pixelIndex + 1 ] / 255;
+    var b = this.imgData[ pixelIndex + 2 ] / 255;
+    var max = Math.max( r, g, b );
+    var min = Math.min( r, g, b );
+    return ( max + min ) / 2;
+  } // end getPixelLum()
+
+=================
+  //----------------------------------------------------------------------------
   this.createCanvas = function( options ) {
     //--------------------------------------------------------------------------
     console.log( "3) createCanvas() ");
