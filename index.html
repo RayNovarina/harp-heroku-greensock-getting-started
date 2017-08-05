@@ -68,25 +68,40 @@ nicely with small objects and it is easy to integrate.
       color: green;
   }
 
-  .checkboxes {
+  .checkboxesRow1 {
     position: absolute;
     top: 6px;
     left: 888px;
   }
-  .checkboxes input {
+  .checkboxesRow1 input {
       margin-left: 0px;
       padding: 0 6px;
       text-decoration: underline;
       color: blue;
       cursor: pointer
   }
-  .checkboxes input:hover {
+  .checkboxesRow1 input:hover {
+      color: green;
+  }
+  .checkboxesRow2 {
+    position: absolute;
+    top: 26px;
+    left: 888px;
+  }
+  .checkboxesRow2 input {
+      margin-left: 0px;
+      padding: 0 6px;
+      text-decoration: underline;
+      color: blue;
+      cursor: pointer
+  }
+  .checkboxesRow2 input:hover {
       color: green;
   }
 
   .profileContainer {
     position: absolute;
-    top: 40px;
+    top: 50px;
     left: 4px;
     width: 430px;
     height: 438px;
@@ -95,7 +110,7 @@ nicely with small objects and it is easy to integrate.
   }
   .conversionContainer {
     position: absolute;
-    top: 40px;
+    top: 50px;
     left: 446px;
     width: 430px;
     height: 438px;
@@ -104,7 +119,7 @@ nicely with small objects and it is easy to integrate.
   }
   .animationContainer {
     position: absolute;
-    top: 40px;
+    top: 50px;
     left: 888px;
     width: 430px;
     height: 438px;
@@ -133,8 +148,28 @@ nicely with small objects and it is easy to integrate.
     <!-- <a id="reset" style="margin-left: 10px;">RESET</a> -->
   </div>
 
-  <div class="checkboxes">
-    <input id="checkbox1" type="checkbox">&nbsp;TrrData
+  <div class="checkboxesRow1">
+    <input id="cbox_useTrr" type="checkbox"
+           title="When converting photo to halftone: use stored TRR effectsData array."
+           >-Use TrrData&nbsp;
+    <input id="cbox_transform" type="checkbox"
+           title="When converting photo to halftone: transform pixels into halftone balls. Per units from next checkboxes."
+           >-Transform&nbsp;
+    <input id="cbox_exclude" type="checkbox"
+           title="When converting photo to halftone: reject pixels. Per units from next checkboxes."
+           >-Exclude&nbsp;
+  </div>
+
+  <div class="checkboxesRow2">
+    <input id="cbox_every1" type="checkbox"
+           title="When converting photo to halftone: reject or transform every pixel."
+           >-Every 1&nbsp;
+    <input id="cbox_every4" type="checkbox"
+           title="When converting photo to halftone: reject or transform every 4 pixels."
+           >-Every 4&nbsp;
+    <input id="cbox_5x5_cluster" type="checkbox"
+           title="When converting photo to halftone: reject or transform every 5x5 cluster of pixels."
+           >-5x5 Cluster&nbsp;
   </div>
 
   <div id="profileContainer" class="profileContainer">
@@ -179,8 +214,23 @@ $( document ).ready( function() {
     trrPlugin.newPhoto( { photoType: "color", photoTag: $(this).attr('photoTag'),
                           imgSrc: $(this).attr('data-src') } );
   });
-  $( "#checkbox1" ).click( function( event ) {
-    trrPlugin.useTrrData( { event: event } );
+  $( "#cbox_useTrr" ).click( function( event ) {
+    trrPlugin.cbox_useTrr( { event: event } );
+  });
+  $( "#cbox_exclude" ).click( function( event ) {
+    trrPlugin.cbox_exclude( { event: event } );
+  });
+  $( "#cbox_transform" ).click( function( event ) {
+    trrPlugin.cbox_transform( { event: event } );
+  });
+  $( "#cbox_every1" ).click( function( event ) {
+    trrPlugin.cbox_every1( { event: event } );
+  });
+  $( "#cbox_every4" ).click( function( event ) {
+    trrPlugin.cbox_every4( { event: event } );
+  });
+  $( "#cbox_5x5_cluster" ).click( function( event ) {
+    trrPlugin.cbox_5x5_cluster( { event: event } );
   });
   /*1-*/}.bind( trrPlugin ));
 }); //end $( document ).ready()
@@ -207,9 +257,23 @@ function TrrEffect() {
     photoTag: $el.attr('photoTag'),
     photoType: $el.attr('photoType'),
     isUseTrrData: false,
+    isTransformPixels: true,
+    isExcludePixels: false,
+    isProcessBySkipCount: true,
+    isEvery1: true,
+    nthPixelToProcess: 1,
+    isEvery4: false,
+    is5x5_cluster: false,
+    isProcessByCluster: false,
+    pixelsPerClusterSide: 5,
     isActionsUseMovedConversionContainer: false,
   };
-  $( '#checkbox1' ).prop('checked', this.defaults.isUseTrrData);
+  $( '#cbox_useTrr' ).prop('checked', this.defaults.isUseTrrData );
+  $( '#cbox_exclude' ).prop('checked', this.defaults.isExcludePixels );
+  $( '#cbox_transform' ).prop('checked', this.defaults.isTransformPixels );
+  $( '#cbox_every1' ).prop('checked', this.defaults.isEvery1 );
+  $( '#cbox_every4' ).prop('checked', this.defaults.isEvery4 );
+  $( '#cbox_5x5_cluster' ).prop('checked', this.defaults.is5x5_cluster );
   // Create settings for first time, will nit settings from defaults.
   this.settings = updateSettings( { timeNow: timeNow, id: 'mapTrrEffect_' + timeNow } );
 	this.particles = [];
@@ -285,6 +349,14 @@ function TrrEffect() {
     this.conversionContainerBackgroundRGB = this.imgDataBackgroundRGB;
     this.conversionContainerBackgroundRGBA = this.imgDataBackgroundRGBA;
     this.settings.rgbChannel = 'blue'; // this.settings.halftoneColor
+    this.particlesRejectedBecauseParticleIsOutOfBounds = 0;
+    this.particlesRejectedBecausePixelIntensityLessThanThreshold = 0;
+    this.particlesRejectedBecausePixelSameAsConversionContainerBackgroundRGB = 0;
+    this.particlesRejectedBecausePixelSameAsConversionContainerBackgroundRGBA = 0;
+    this.particlesRejectedBecauseIsExcludedNthPixell = 0;
+    this.particlesRejectedBecauseIsNonCenterMemberOfCluster = 0;
+    this.settings.rgbChannelOffset = RGB_CHANNEL_OFFSETS[ this.settings.rgbChannel ];
+    this.settings.rgbChannelAngle = RGB_CHANNEL_ANGLES[ this.settings.rgbChannel ];
 
     // Create conversionContainer
     this.createSceneContainer( {
@@ -301,14 +373,28 @@ function TrrEffect() {
     this.scene = scene;
     // Create particle array by selecting pixels we want for a halftone image.
     this.createParticleMap( {
-      id: this.settings.id
+      id: this.settings.id,
+      maxHalftoneDotSize: 1/150,
+      pixelChannelIntensityThreshold: 0.05,
+      imageScale: 1.0, // canvas.width / imgWidth;
+      // If isProcessBySkipCount is true. Default is 4.
+      // NOTE: Use buttons for options. Risky to set override here.
+      // nthPixelToProcess: 4,
+
+      // NOTE: Use buttons for options. Risky to set override here.
+      // If isProcessByCluster is true. Default is ?
+      // pixelsPerClusterSide: 5,
+
+      isRejectParticlesOutOfBounds: true,
+      isRejectParticlesBelowIntensityThreshold: true,
+      isRejectParticlesSameAsConversionContainerBackground: true,
     },
     /*2-Resume here when done*/ function( particles ) {
     this.particles = particles;
     // Create elements (from the particle map) in a form that we can animate.
     this.createAnimationElements( {
-      animationElementWidth: 6,
-      animationElementHeight: 6,
+      animationElementWidth: 10,
+      animationElementHeight: 10,
       animationElementColor: '#70C0EF',
       animationElementOffsetX: -80,
       animationElementOffsetY: -20,
@@ -414,16 +500,83 @@ function TrrEffect() {
   */
 
   //----------------------------------------------------------------------------
-  this.useTrrData = function( options, /*Code to resume when done*/ callback ) {
+  this.cbox_useTrr = function( options, /*Code to resume when done*/ callback ) {
     //--------------------------------------------------------------------------
-    console.log( " ..*4.5) useTrrData() Box checked = '" + $( '#checkbox1' ).prop('checked') + "'. *");
-    this.settings.isUseTrrData = $( '#checkbox1' ).prop('checked');
+    console.log( " ..*4.5) cbox_useTrr() Box checked = '" + $( '#cbox_useTrr' ).prop('checked') + "'. *");
+    this.settings.isUseTrrData = $( '#cbox_useTrr' ).prop('checked');
     if ( typeof callback == 'function' ) { callback(); return; }
-  } // end: this.useTrrData function()
+  } // end: this.cbox_useTrr function()
+
+  //----------------------------------------------------------------------------
+  this.cbox_exclude = function( options, /*Code to resume when done*/ callback ) {
+    //--------------------------------------------------------------------------
+    console.log( " ..*4.5) cbox_exclude() Box checked = '" + $( '#cbox_exclude' ).prop('checked') + "'. *");
+    if ( $( '#cbox_exclude' ).prop('checked') ) {
+      this.settings.isTransformPixels = false;
+      this.settings.isExcludePixels = true;
+      $( '#cbox_transform' ).prop('checked', false );
+    }
+    if ( typeof callback == 'function' ) { callback(); return; }
+  } // end: this.cbox_exclude function()
+
+  //----------------------------------------------------------------------------
+  this.cbox_transform = function( options, /*Code to resume when done*/ callback ) {
+    //--------------------------------------------------------------------------
+    console.log( " ..*4.5) cbox_transform() Box checked = '" + $( '#cbox_transform' ).prop('checked') + "'. *");
+    if ( $( '#cbox_transform' ).prop('checked') ) {
+      this.settings.isTransformPixels = true;
+      this.settings.isExcludePixels = false;
+      $( '#cbox_exclude' ).prop('checked', false );
+    }
+    if ( typeof callback == 'function' ) { callback(); return; }
+  } // end: this.cbox_transform function()
+
+  //----------------------------------------------------------------------------
+  this.cbox_every1 = function( options, /*Code to resume when done*/ callback ) {
+    //--------------------------------------------------------------------------
+    console.log( " ..*4.5) cbox_every1() Box checked = '" + $( '#cbox_every1' ).prop('checked') + "'. *");
+    if ( $( '#cbox_every1' ).prop('checked') ) {
+      this.settings.isProcessBySkipCount = true;
+      this.settings.isProcessByCluster = false;
+      this.settings.nthPixelToProcess = 1;
+      $( '#cbox_every4' ).prop('checked', false );
+      $( '#cbox_5x5_cluster' ).prop('checked', false );
+    }
+    if ( typeof callback == 'function' ) { callback(); return; }
+  } // end: this.cbox_every1 function()
+
+  //----------------------------------------------------------------------------
+  this.cbox_every4 = function( options, /*Code to resume when done*/ callback ) {
+    //--------------------------------------------------------------------------
+    console.log( " ..*4.5) cbox_every4() Box checked = '" + $( '#cbox_every4' ).prop('checked') + "'. *");
+    if ( $( '#cbox_every4' ).prop('checked') ) {
+      this.settings.isProcessBySkipCount = true;
+      this.settings.isProcessByCluster = false;
+      this.settings.nthPixelToProcess = 4;
+      $( '#cbox_every1' ).prop('checked', false );
+      $( '#cbox_5x5_cluster' ).prop('checked', false );
+    }
+    if ( typeof callback == 'function' ) { callback(); return; }
+  } // end: this.cbox_every4 function()
+
+  //----------------------------------------------------------------------------
+  this.cbox_5x5_cluster = function( options, /*Code to resume when done*/ callback ) {
+    //--------------------------------------------------------------------------
+    console.log( " ..*4.5) cbox_5x5_cluster() Box checked = '" + $( '#cbox_5x5_cluster' ).prop('checked') + "'. *");
+    if ( $( '#cbox_5x5_cluster' ).prop('checked') ) {
+      this.settings.isProcessBySkipCount = false;
+      this.settings.isProcessByCluster = true;
+      this.settings.pixelsPerClusterSide = 5;
+      $( '#cbox_every1' ).prop('checked', false );
+      $( '#cbox_every4' ).prop('checked', false );
+    }
+    if ( typeof callback == 'function' ) { callback(); return; }
+  } // end: this.cbox_5x5_cluster function()
 
   //----------------------------------------------------------------------------
   this.createParticleMap = function( options, /*Code to resume when done*/ callback ) {
     //--------------------------------------------------------------------------
+    updateSettings( options );
     console.log( " ..*5) createParticleMap() for id: '" + options.id +
                  "'. useTrrData: '" + this.settings.isUseTrrData + "'. *");
 
@@ -436,26 +589,10 @@ function TrrEffect() {
         particlesHomeOffsetTop: 20,
       } );
     } else {
-      this.particlesRejectedBecauseParticleIsOutOfBounds = 0;
-      this.particlesRejectedBecausePixelIntensityLessThanThreshold = 0;
-      this.particlesRejectedBecausePixelSameAsConversionContainerBackgroundRGB = 0;
-      this.particlesRejectedBecausePixelSameAsConversionContainerBackgroundRGBA = 0;
-      this.particlesRejectedBecauseIsEveryNthPixell = 0;
-      this.settings.rgbChannelOffset = RGB_CHANNEL_OFFSETS[ this.settings.rgbChannel ];
-      this.settings.rgbChannelAngle = RGB_CHANNEL_ANGLES[ this.settings.rgbChannel ];
-
       particles = this.makeCartesianGridParticles( {
         id: options.id,
         particlesHomeOffsetLeft: 82,
         particlesHomeOffsetTop: 20,
-        maxHalftoneDotSize: 1/150,
-        pixelChannelIntensityThreshold: 0.05,
-        imageScale: 1.0, // canvas.width / imgWidth;
-        nthPixelToReject: 0, //4,
-        pixelsPerCluster: 1,
-        isRejectParticlesOutOfBounds: true,
-        isRejectParticlesBelowIntensityThreshold: true,
-        isRejectParticlesSameAsConversionContainerBackground: true,
       } );
     }
     console.log( " ..*5a) createParticleMap() Created particles[" + particles.length + "] *");
@@ -496,7 +633,6 @@ function TrrEffect() {
   //----------------------------------------------------------------------------
   this.makeCartesianGridParticles = function( options, /*Code to resume when done*/ callback ) {
     //--------------------------------------------------------------------------
-    options.isRejectEveryNthPixell = options.nthPixelToReject > 0;
     updateSettings( options );
     console.log( " ..*5.2) makeCartesianGridParticles() for id: " + this.settings.id +
                  ". Particles Home position Offset left: " + this.settings.particlesHomeOffsetLeft +
@@ -504,9 +640,15 @@ function TrrEffect() {
                  ". maxHalftoneDotSize: " + this.settings.maxHalftoneDotSize +
                  ". pixelChannelIntensityThreshold: " + this.settings.pixelChannelIntensityThreshold +
                  ". imageScale: " + this.settings.imageScale +
-                 ". nthPixelToReject: " + this.settings.nthPixelToReject +
-                 ". pixelsPerCluster: " + this.settings.pixelsPerCluster +
-                 ". isRejectEveryNthPixell: " + this.settings.isRejectEveryNthPixell +
+
+                 ". isTransformPixels: " + this.settings.isTransformPixels +
+                 ". isExcludePixels: " + this.settings.isExcludePixels +
+                 ". isProcessBySkipCount: " + this.settings.isProcessBySkipCount +
+                 ". nthPixelToProcess: " + this.settings.nthPixelToProcess +
+
+                 ". isProcessByCluster: " + this.settings.isProcessByCluster +
+                 ". pixelsPerClusterSide: " + this.settings.pixelsPerClusterSide +
+
                  ". isRejectParticlesOutOfBounds: " + this.settings.isRejectParticlesOutOfBounds +
                  ". isRejectParticlesBelowIntensityThreshold: " + this.settings.isRejectParticlesBelowIntensityThreshold +
                  ". isRejectParticlesSameAsConversionContainerBackground: " + this.settings.isRejectParticlesSameAsConversionContainerBackground +                 ".");
@@ -594,7 +736,9 @@ function TrrEffect() {
                  "'. Particles Rejected Because Pixel Same As Conversion Container Background RGB = '" +
                  this.particlesRejectedBecausePixelSameAsConversionContainerBackgroundRGB +
                  "'. Particles Rejected Because Is Every Nth Pixell = '" +
-                 this.particlesRejectedBecauseIsEveryNthPixell +
+                 this.particlesRejectedBecauseIsExcludedNthPixell +
+                 "'. Particles Rejected Because Is Non-center member of cluster. = '" +
+                 this.particlesRejectedBecauseIsNonCenterMemberOfCluster +
                  "'. *");
     if ( typeof callback == 'function' ) { callback( particles ); return; }
      return particles;
@@ -611,20 +755,29 @@ function TrrEffect() {
       y = Math.round( y );
     }
 
-  if ( this.settings.isRejectEveryNthPixell ) {
-    if ( y % this.settings.nthPixelToReject == 0 &&
-         x % this.settings.nthPixelToReject == 0 ) {
-      this.particlesRejectedBecauseIsEveryNthPixell += 1;
-      return { isAccepted: false };
-    }
-  }
-
-
-  if ( this.settings.isRejectParticlesOutOfBounds &&
-       ( x < 0 || x > this.settings.img.width ||
-         y < 0 || y > this.settings.img.height ) ) {
+    if ( this.settings.isRejectParticlesOutOfBounds &&
+         ( x < 0 || x > this.settings.img.width ||
+           y < 0 || y > this.settings.img.height ) ) {
       this.particlesRejectedBecauseParticleIsOutOfBounds += 1;
       return { isAccepted: false };
+    }
+
+    if ( this.settings.isExcludePixels &&
+         this.settings.isProcessBySkipCount ) {
+      if ( y % this.settings.nthPixelToProcess == 0 &&
+           x % this.settings.nthPixelToProcess == 0 ) {
+        this.particlesRejectedBecauseIsExcludedNthPixell += 1;
+        return { isAccepted: false };
+      }
+    }
+
+    // this.settings.pixelsPerClusterSide
+    if ( this.settings.isExcludePixels &&
+         this.settings.isProcessByCluster ) {
+      if ( 2 == 0 ) {
+        this.particlesRejectedBecauseIsNonCenterMemberOfCluster += 1;
+        return { isAccepted: false };
+      }
     }
 
     var pixelInfo = this.getPixelInfo( x, y, rgbChannel );
