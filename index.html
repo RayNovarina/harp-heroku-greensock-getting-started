@@ -164,6 +164,12 @@ nicely with small objects and it is easy to integrate.
     <input id="cbox_every1" type="checkbox"
            title="When converting photo to halftone: reject or transform every pixel."
            >-Every 1&nbsp;
+    <input id="cbox_every2" type="checkbox"
+           title="When converting photo to halftone: reject or transform every 2 pixels."
+           >-Every 2&nbsp;
+    <input id="cbox_every3" type="checkbox"
+           title="When converting photo to halftone: reject or transform every 3 pixels."
+           >-Every 3&nbsp;
     <input id="cbox_every4" type="checkbox"
            title="When converting photo to halftone: reject or transform every 4 pixels."
            >-Every 4&nbsp;
@@ -198,10 +204,10 @@ $( document ).ready( function() {
     ///*1-/}.bind( trrPlugin ));
   });
   $( "#explode" ).click( function() {
-    trrPlugin.explode( { tweenDuration: 3.0 } );
+    trrPlugin.explode( { tweenDuration: 4.0 } );
   });
   $( "#collapse" ).click( function() {
-    trrPlugin.collapse();
+    trrPlugin.collapse( { tweenDuration: 6.0 } );
   });
   $( "#reset" ).click( function() {
     trrPlugin.reset();
@@ -225,6 +231,12 @@ $( document ).ready( function() {
   });
   $( "#cbox_every1" ).click( function( event ) {
     trrPlugin.cbox_every1( { event: event } );
+  });
+  $( "#cbox_every2" ).click( function( event ) {
+    trrPlugin.cbox_every2( { event: event } );
+  });
+  $( "#cbox_every3" ).click( function( event ) {
+    trrPlugin.cbox_every3( { event: event } );
   });
   $( "#cbox_every4" ).click( function( event ) {
     trrPlugin.cbox_every4( { event: event } );
@@ -260,8 +272,10 @@ function TrrEffect() {
     isTransformPixels: true,
     isExcludePixels: false,
     isProcessBySkipCount: true,
-    isEvery1: true,
-    nthPixelToProcess: 1,
+    isEvery1: false,
+    nthPixelToProcess: 3,
+    isEvery2: false,
+    isEvery3: true,
     isEvery4: false,
     is5x5_cluster: false,
     isProcessByCluster: false,
@@ -272,6 +286,8 @@ function TrrEffect() {
   $( '#cbox_exclude' ).prop('checked', this.defaults.isExcludePixels );
   $( '#cbox_transform' ).prop('checked', this.defaults.isTransformPixels );
   $( '#cbox_every1' ).prop('checked', this.defaults.isEvery1 );
+  $( '#cbox_every2' ).prop('checked', this.defaults.isEvery2 );
+  $( '#cbox_every3' ).prop('checked', this.defaults.isEvery3 );
   $( '#cbox_every4' ).prop('checked', this.defaults.isEvery4 );
   $( '#cbox_5x5_cluster' ).prop('checked', this.defaults.is5x5_cluster );
   // Create settings for first time, will nit settings from defaults.
@@ -354,6 +370,7 @@ function TrrEffect() {
     this.particlesRejectedBecausePixelSameAsConversionContainerBackgroundRGB = 0;
     this.particlesRejectedBecausePixelSameAsConversionContainerBackgroundRGBA = 0;
     this.particlesRejectedBecauseIsExcludedNthPixell = 0;
+    this.particlesRejectedBecauseIsExcludedNotNthPixell = 0;
     this.particlesRejectedBecauseIsNonCenterMemberOfCluster = 0;
     this.settings.rgbChannelOffset = RGB_CHANNEL_OFFSETS[ this.settings.rgbChannel ];
     this.settings.rgbChannelAngle = RGB_CHANNEL_ANGLES[ this.settings.rgbChannel ];
@@ -419,7 +436,7 @@ function TrrEffect() {
 
 		for( var i = 0; i < canvasParticlesLen; i++ ) {
 			var canvasParticle = canvasParticles.eq(i);
-			var randX = getRandom(  300 , -300 );
+			var randX = getRandom(  30 , -30 );
 			var randY = getRandom(  300 , -300 );
 
 			var tmax = TweenMax.to( canvasParticle, options.tweenDuration, {
@@ -471,7 +488,26 @@ function TrrEffect() {
   this.collapse = function( options, /*Code to resume when done*/ callback ) {
     //--------------------------------------------------------------------------
     console.log( " ..*4.3) collapse() *");
+    this.copyConversionContainerToAnimationContainer( {} ); // { isActionsUseMovedConversionContainer: true }
+    var particleContainer = this.animationContainer,
+        canvasParticles = $( particleContainer ).find( 'canvas' ),
+        canvasParticlesLen = canvasParticles.length;
+    console.log( " ..*4.3) collapse() particleContainer: '" + particleContainer.id +
+                 "' which has " + canvasParticles.length + " canvasParticles" +
+                 ". Tween Duration: '" + options.tweenDuration + "'. *");
 
+		for( var i = 0; i < canvasParticlesLen; i++ ) {
+			var canvasParticle = canvasParticles.eq(i);
+			var randX = getRandom(  30 , -30 );
+			var randY = getRandom(  300 , -300 );
+
+			var tmax = TweenMax.to( canvasParticle, options.tweenDuration, {
+			  left: randX,
+				top: randY,
+				autoAlpha: 0,
+        ease: Power0.easeInOut
+			}); // end TweenMax
+		} // end for( var i )
     if ( typeof callback == 'function' ) { callback(); return; }
   } // end: this.collapse function()
 
@@ -539,11 +575,45 @@ function TrrEffect() {
       this.settings.isProcessBySkipCount = true;
       this.settings.isProcessByCluster = false;
       this.settings.nthPixelToProcess = 1;
+      $( '#cbox_every2' ).prop('checked', false );
+      $( '#cbox_every3' ).prop('checked', false );
       $( '#cbox_every4' ).prop('checked', false );
       $( '#cbox_5x5_cluster' ).prop('checked', false );
     }
     if ( typeof callback == 'function' ) { callback(); return; }
   } // end: this.cbox_every1 function()
+
+  //----------------------------------------------------------------------------
+  this.cbox_every2 = function( options, /*Code to resume when done*/ callback ) {
+    //--------------------------------------------------------------------------
+    console.log( " ..*4.5) cbox_every2() Box checked = '" + $( '#cbox_every2' ).prop('checked') + "'. *");
+    if ( $( '#cbox_every2' ).prop('checked') ) {
+      this.settings.isProcessBySkipCount = true;
+      this.settings.isProcessByCluster = false;
+      this.settings.nthPixelToProcess = 2;
+      $( '#cbox_every1' ).prop('checked', false );
+      $( '#cbox_every3' ).prop('checked', false );
+      $( '#cbox_every4' ).prop('checked', false );
+      $( '#cbox_5x5_cluster' ).prop('checked', false );
+    }
+    if ( typeof callback == 'function' ) { callback(); return; }
+  } // end: this.cbox_every2 function()
+
+  //----------------------------------------------------------------------------
+  this.cbox_every3 = function( options, /*Code to resume when done*/ callback ) {
+    //--------------------------------------------------------------------------
+    console.log( " ..*4.5) cbox_every3() Box checked = '" + $( '#cbox_every3' ).prop('checked') + "'. *");
+    if ( $( '#cbox_every3' ).prop('checked') ) {
+      this.settings.isProcessBySkipCount = true;
+      this.settings.isProcessByCluster = false;
+      this.settings.nthPixelToProcess = 3;
+      $( '#cbox_every1' ).prop('checked', false );
+      $( '#cbox_every2' ).prop('checked', false );
+      $( '#cbox_every4' ).prop('checked', false );
+      $( '#cbox_5x5_cluster' ).prop('checked', false );
+    }
+    if ( typeof callback == 'function' ) { callback(); return; }
+  } // end: this.cbox_every3 function()
 
   //----------------------------------------------------------------------------
   this.cbox_every4 = function( options, /*Code to resume when done*/ callback ) {
@@ -554,6 +624,8 @@ function TrrEffect() {
       this.settings.isProcessByCluster = false;
       this.settings.nthPixelToProcess = 4;
       $( '#cbox_every1' ).prop('checked', false );
+      $( '#cbox_every2' ).prop('checked', false );
+      $( '#cbox_every3' ).prop('checked', false );
       $( '#cbox_5x5_cluster' ).prop('checked', false );
     }
     if ( typeof callback == 'function' ) { callback(); return; }
@@ -568,6 +640,8 @@ function TrrEffect() {
       this.settings.isProcessByCluster = true;
       this.settings.pixelsPerClusterSide = 5;
       $( '#cbox_every1' ).prop('checked', false );
+      $( '#cbox_every2' ).prop('checked', false );
+      $( '#cbox_every3' ).prop('checked', false );
       $( '#cbox_every4' ).prop('checked', false );
     }
     if ( typeof callback == 'function' ) { callback(); return; }
@@ -679,6 +753,8 @@ function TrrEffect() {
                  ". columns = " + cols + ". Max number of particles = " +
                  maxNumOfParticles + ". *");
 
+    var carryOverResults = {};
+
     // Calculate the "home position", i.e. the image xy of each filtered pixel.
     var isTerminateLoop = false,
         previousStartingX1 = 0;
@@ -715,7 +791,7 @@ function TrrEffect() {
         // Returns null if rejected. Else returns Particle.
         // NOTE: rejected particle locations just stay whatever the canvas
         // background/fill color is.
-        var filterResults = this.particleFilter( this.settings.rgbChannel, home_position_x, home_position_y );
+        var filterResults = this.particleFilter( this.settings.rgbChannel, home_position_x, home_position_y, carryOverResults );
         if ( filterResults.isAccepted ) {
           particles.push( {
             x: filterResults.x + homeOffsetLeft,
@@ -725,6 +801,7 @@ function TrrEffect() {
         }
       } // end for (col)
     } // end for (row)
+
     console.log( " ..*5.2b) makeCartesianGridParticles(): END LOOP: particles[].len = " +
                  particles.length + ". Out of " + maxNumOfParticles + " possible. " +
                  "Particles Rejected Because Particle Is Out Of Bounds = '" +
@@ -735,9 +812,11 @@ function TrrEffect() {
                  this.particlesRejectedBecausePixelSameAsConversionContainerBackgroundRGBA +
                  "'. Particles Rejected Because Pixel Same As Conversion Container Background RGB = '" +
                  this.particlesRejectedBecausePixelSameAsConversionContainerBackgroundRGB +
-                 "'. Particles Rejected Because Is Every Nth Pixell = '" +
+                 "'. Particles Rejected Because is Every Nth Pixell = '" +
                  this.particlesRejectedBecauseIsExcludedNthPixell +
-                 "'. Particles Rejected Because Is Non-center member of cluster. = '" +
+                 "'. Particles Rejected Because it is NOT the Nth Pixell = '" +
+                 this.particlesRejectedBecauseIsExcludedNotNthPixell +
+                 "'. Particles Rejected Because is Non-center member of cluster. = '" +
                  this.particlesRejectedBecauseIsNonCenterMemberOfCluster +
                  "'. *");
     if ( typeof callback == 'function' ) { callback( particles ); return; }
@@ -745,7 +824,7 @@ function TrrEffect() {
   } // end: this.makeParticles function()
 
   //----------------------------------------------------------------------------
-  this.particleFilter = function( rgbChannel, x, y ) {
+  this.particleFilter = function( rgbChannel, x, y, carryOverResults ) {
     //----------------------------------------------------------------------------
     if (this.settings.imageScale !== 1.0 ) {
         x = Math.round( x / this.settings.imageScale);
@@ -762,24 +841,41 @@ function TrrEffect() {
       return { isAccepted: false };
     }
 
-    if ( this.settings.isExcludePixels &&
-         this.settings.isProcessBySkipCount ) {
+    if ( this.settings.isProcessByCluster ) {
+      return this.particleFilterByCluster( rgbChannel, x, y, carryOverResults );
+    }
+
+    // isProcessBySkipCount
+    if ( this.settings.nthPixelToProcess > 1 ) {
+      // Not every pixel is to be looked at.
+      // Reject (if isExcludePixels) or accept (if isTransformPixels) every nth pixel.
       if ( y % this.settings.nthPixelToProcess == 0 &&
            x % this.settings.nthPixelToProcess == 0 ) {
-        this.particlesRejectedBecauseIsExcludedNthPixell += 1;
+        // This is the nth pixel.
+        if ( this.settings.isExcludePixels ) {
+          this.particlesRejectedBecauseIsExcludedNthPixell += 1;
+          return { isAccepted: false };
+        }
+      // Else this is not the nth pixel.
+      } else if ( this.settings.isTransformPixels ) {
+        // And we are only accepting the nth pixel.
+        this.particlesRejectedBecauseIsExcludedNotNthPixell += 1;
         return { isAccepted: false };
       }
-    }
 
-    // this.settings.pixelsPerClusterSide
-    if ( this.settings.isExcludePixels &&
-         this.settings.isProcessByCluster ) {
-      if ( 2 == 0 ) {
-        this.particlesRejectedBecauseIsNonCenterMemberOfCluster += 1;
-        return { isAccepted: false };
+      if ( this.settings.isExcludePixels ) {
+        // Reject every nth pixel.
+        if ( y % this.settings.nthPixelToProcess == 0 &&
+             x % this.settings.nthPixelToProcess == 0 ) {
+          this.particlesRejectedBecauseIsExcludedNthPixell += 1;
+          return { isAccepted: false };
+        }
+      }  else { // isTransformPixels
+        // Keep processing every nth pixel.
+
       }
     }
-
+    // We are processing every pixel that gets here.
     var pixelInfo = this.getPixelInfo( x, y, rgbChannel );
 
     if ( this.settings.isRejectParticlesBelowIntensityThreshold &&
@@ -803,6 +899,17 @@ function TrrEffect() {
       pixelChannelIntensity: pixelInfo.channelIntensity,
     };
   } // end this.particleFilter()
+
+  //----------------------------------------------------------------------------
+  this.particleFilterByCluster = function( rgbChannel, x, y, carryOverResults ) {
+    //--------------------------------------------------------------------------
+    // this.settings.pixelsPerClusterSide
+    return { isAccepted: true };
+    //if ( 2 == 0 ) {
+    //  this.particlesRejectedBecauseIsNonCenterMemberOfCluster += 1;
+    //  return { isAccepted: true };
+    //}
+  } // end this.particleFilterByCluster()
 
   //----------------------------------------------------------------------------
   this.getPixelInfo = function( x, y, rgbChannel ) {
