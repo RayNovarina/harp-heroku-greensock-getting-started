@@ -59,6 +59,87 @@ View on Heroku:
   Deployed on Heroku at https://harp-greensock-getting-started-94037.herokuapp.com/
 
 ------------------------------
+
+// Create plugIn instance, defaults.
+var trrPlugin = new TrrEffect();
+// Select, display default photo.
+trrPlugin.newPhoto( { photoType: "color", photoTag: "meg", imgSrc: './images/meg_CC_422x436.jpg' },
+/*1-Resume here when done*/ function() {
+
+// Add click handlers for various functions.
+// People
+$( "#newPhotoMike" ).click( function( event ) {
+  trrPlugin.newPhoto( { photoType: "color", photoTag: $(this).attr('photoTag'),
+                        imgSrc: $(this).attr('data-src') } );
+});
+$( "#newPhotoMeg" ).click( function( event ) {
+  trrPlugin.newPhoto( { photoType: "color", photoTag: $(this).attr('photoTag'),
+                        imgSrc: $(this).attr('data-src') } );
+});
+
+// Actions
+$( "#convert" ).click( function() {
+  trrPlugin.convert();
+  //trrPlugin.convert( {},
+  ///*1-Resume here when done/ function() {
+  //var imgSrc = trrPlugin.settings.imgSrc;
+  ///*1-/}.bind( trrPlugin ));
+});
+$( "#elements" ).click( function() {
+  trrPlugin.elements();
+});
+$( "#explode" ).click( function() {
+  trrPlugin.explode( { tweenDuration: 4.0 } );
+});
+$( "#collapse" ).click( function() {
+  trrPlugin.collapse( { tweenDuration: 6.0 } );
+});
+$( "#riseUp" ).click( function() {
+  trrPlugin.riseUp( { tweenDuration: 4.0 } );
+});
+$( "#combineAll" ).click( function() {
+  trrPlugin.combineAll( { tweenDuration: 4.0 } );
+});
+$( "#reset" ).click( function() {
+  trrPlugin.reset();
+});
+
+// Action checkboxesRow1
+
+$( "#cbox_transform" ).click( function( event ) {
+  trrPlugin.cbox_transform( { event: event } );
+});
+$( "#cbox_exclude" ).click( function( event ) {
+  trrPlugin.cbox_exclude( { event: event } );
+});
+$( "#cbox_useTrr" ).click( function( event ) {
+  trrPlugin.cbox_useTrr( { event: event } );
+});
+$( "#cbox_useSVG" ).click( function( event ) {
+  trrPlugin.cbox_useSVG( { event: event } );
+});
+$( "#cbox_yoyo" ).click( function( event ) {
+  trrPlugin.cbox_yoyo( { event: event } );
+});
+
+// checkboxesRow1
+$( "#cbox_every1" ).click( function( event ) {
+  trrPlugin.cbox_every1( { event: event } );
+});
+$( "#cbox_every2" ).click( function( event ) {
+  trrPlugin.cbox_every2( { event: event } );
+});
+$( "#cbox_every3" ).click( function( event ) {
+  trrPlugin.cbox_every3( { event: event } );
+});
+$( "#cbox_every4" ).click( function( event ) {
+  trrPlugin.cbox_every4( { event: event } );
+});
+$( "#cbox_5x5_cluster" ).click( function( event ) {
+  trrPlugin.cbox_5x5_cluster( { event: event } );
+});
+
+========================
 maxNumOfParticles =  rows * cols,
 imageOffset = ( diag - image_width ) / 2,
 halfImageWidth = image_width / 2,
