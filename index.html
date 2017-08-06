@@ -25,175 +25,76 @@
 <script type="text/javascript" src="js/gsap/src/minified/TweenMax.min.js"></script>
 <script type="text/javascript" src="js/gsap/src/minified/TimelineMax.min.js"></script>
 
-<!--
-One way to explode items at: https://greensock.com/forums/topic/7622-one-way-to-explode-items-example-included/
-                        and: https://codepen.io/netgfx/pen/FpiJw?editors=1111
--->
-
 <style type="text/css">
 </style>
 </head>
 
+<!--
+  // directionalRotation -
+-->
 <body>
 
-  <div class="peopleLeftRow1">
-    <a id="newPhotoMike" style="margin-left: 0px;" photoTag="mike"
-       data-src="./images/mike_CC_422x436.jpg"
-       title=""
-    >Mike</a>
-    <a id="newPhotoMeg" style="margin-left: 10px;" photoTag="meg"
-       data-src="./images/meg_CC_422x436.jpg"
-       title=""
-    >Meg</a>
-    <a id="newPhotoLaura" style="margin-left: 10px;" photoTag="laura"
-       data-src="./images/laura_oliphant_422x436.jpg"
-       title=""
-    >Laura</a>
-    <a id="newPhotoGary" style="margin-left: 10px;" photoTag="gary"
-       data-src="./images/gary_crossland_422x436.jpg"
-       title=""
-    >Gary</a>
-    <span>     (All photos are 422x436 .jpg)
-  </div>
-
-  <div class="actionsLeftRow2">
-  </div>
-
-  <div class="actionsMiddleRow1">
-    <a id="convert" style="margin-left: 0px;"
-       title="Display converted particle map once it is done.
-           Create particle map and then create a
-           canvas in the conversionContainer and write the particle
-           dots on it in one pass, i.e. without animation."
-       >Convert</a>
-    <a id="elements" style="margin-left: 10px;"
-       title="Create AnimationElements in the animationContainer. Pin them to
-           their image home position, i.e. re-create the photo image."
-       >Elements</a>
-    <a id="explode" style="margin-left: 10px;"
-       title="Create AnimationElements in the animationContainer. Pin them to
-           their image home position, i.e. re-create the photo image.
-           Delay and then apply the explode animation effect.
-           Elements move up and out."
-       >Explode</a>
-    <a id="collapse" style="margin-left: 10px;"
-       title="Create AnimationElements in the animationContainer. Pin them to
-           their image home position, i.e. re-create the photo image.
-           Delay and then apply the collapse animation effect.
-           Elements move down and inward."
-       >Collapse</a>
-    <a id="riseUp" style="margin-left: 10px;"
-       title="Create AnimationElements in the animationContainer. Pin below
-           their image bottom position, i.e. photo image is visible below the
-           animationContainer.
-           Delay and then apply the rise up animation effect.
-           Elements move up and out."
-       >Rise Up</a>
-    <a id="combineAll" style="margin-left: 10px;"
-       title="Create AnimationElements in the animationContainer. Pin them to
-           their image home position, i.e. re-create the photo image.
-           Delay and then animate a sequence of events: collaspe, rise up."
-       >All</a>
-    <!-- <a id="reset" style="margin-left: 10px;">RESET</a> -->
-  </div>
-
-  <div class="actionsMiddleRow2">
-    <a id="copyPhoto_color" style="margin-left: 0px;"
-       title="Make color copy (pixel by pixel) of selected photo. Write to conversionContainer onto single <canvas>."
-       >Copy</a>
-    <span>&nbsp;&nbsp;&nbsp;</span>
-    <a id="copyPhoto_greyscale" style="margin-left: 10px;"
-       title="Make grey scale copy (pixel by pixel) of selected photo. Write to conversionContainer onto single <canvas>."
-       >GreyScale</a>
-  </div>
-
-  <div class="actionCheckboxesRightRow1">
-    <input id="cbox_transform" type="checkbox"
-           title="When converting photo to halftone: transform pixels into halftone balls. Per units from next checkboxes."
-           >Transform&nbsp;
-    <input id="cbox_exclude" type="checkbox"
-           title="When converting photo to halftone: reject pixels per units from next checkboxes. Default is to Transform pixels."
-           >Exclude&nbsp;
-    <input id="cbox_useTrr" type="checkbox"
-           title="When converting photo to halftone: use stored TRR effectsData array."
-           >TrrData&nbsp;
-    <input id="cbox_useCanvas" type="checkbox"
-           title="When converting halftone particles to animation elements: use <canvas> objects. Default is Canvas objects."
-           >Canvas&nbsp;
-    <input id="cbox_useSVG" type="checkbox"
-           title="When converting halftone particles to animation elements: use <svg> objects. Default is Canvas objects."
-           >SVG&nbsp;
-    <input id="cbox_useDiv" type="checkbox"
-           title="When converting halftone particles to animation elements: use <div> objects. Default is Canvas objects."
-           >Div
-  </div>
-
-  <div class="actionCheckboxesRightRow2">
-
-    <span>Every:&nbsp;</span>
-
-    <input id="cbox_every1" type="checkbox"
-           title="When converting photo to halftone: reject or transform every pixel. Default is every 1 pixel."
-           >1&nbsp;
-    <input id="cbox_every2" type="checkbox"
-           title="When converting photo to halftone: reject or transform every 2 pixels. Default is every 1 pixel."
-           >2&nbsp;
-    <input id="cbox_every3" type="checkbox"
-           title="When converting photo to halftone: reject or transform every 3 pixels. Default is every 1 pixel."
-           >3&nbsp;
-    <input id="cbox_every4" type="checkbox"
-           title="When converting photo to halftone: reject or transform every 4 pixels. Default is every 1 pixel."
-           >4&nbsp;
-
-    <span>&nbsp;Cluster:&nbsp;</span>
-
-    <input id="cbox_1x1_cluster" type="checkbox"
-           title="When converting photo to halftone: reject or transform every 1x1 cluster of pixels. Default is every 1 pixel."
-           >1x1&nbsp;
-    <input id="cbox_3x3_cluster" type="checkbox"
-           title="When converting photo to halftone: reject or transform every 3x3 cluster of pixels. Default is every 1 pixel."
-           >3x3&nbsp;
-    <input id="cbox_5x5_cluster" type="checkbox"
-           title="When converting photo to halftone: reject or transform every 5x5 cluster of pixels. Default is every 1 pixel."
-           >5x5&nbsp;
-    <input id="cbox_7x7_cluster" type="checkbox"
-           title="When converting photo to halftone: reject or transform every 7x7 cluster of pixels. Default is every 1 pixel."
-           >7x7&nbsp;
-  </div>
-
-  <div id="profileContainer" class="profileContainer">
-    <img id="selectedPhoto" photoType="color" photoTag="" src="" data-src="" />
-  </div>
-  <div id="conversionContainer" class="conversionContainer"></div>
-  <div id="animationContainer" class="animationContainer"></div>
-
-<script type="text/javascript" src="js/TrrEffect.js"></script>
-<script type="text/javascript" src="./images/effectsData.js"></script>
-<script type="text/javascript" src="js/particleMap.js"></script>
-<script type="text/javascript" src="js/action_elements.js"></script>
-<script type="text/javascript" src="js/lib.js"></script>
-<script type="text/javascript" src="js/action_convert.js"></script>
-<script type="text/javascript" src="js/action_explode.js"></script>
-<script type="text/javascript" src="js/action_collapse.js"></script>
-<script type="text/javascript" src="js/action_rise_up.js"></script>
-<script type="text/javascript" src="js/action_combine_all.js"></script>
-<script type="text/javascript" src="js/init.js"></script>
+<center style="margin-top: 200px;">
+<img id="photo" src="https://mdn.mozillademos.org/files/5397/rhino.jpg">
+</center>
 
 <script type="text/javascript">
 
-//------------------------------------------------------------------------------
-$( document ).ready( function() {
-  //----------------------------------------------------------------------------
-  console.log( " ..*1) $( document ).ready()");
-  trr_init(
-  /*1-Resume here when done*/ function( trrPlugin ) {
-  // Select, display default photo.
-  newPhoto( trrPlugin, { photoType: "color", photoTag: "meg", imgSrc: './images/meg_CC_422x436.jpg' },
-  /*2-Resume here when done*/ function() {
-  /*2-*/});/*1-*/});
-}); //end $( document ).ready()
+  var element = $("#photo");
 
- </script>
+  // tweens rotation in a particular direction which can
+  // be either clockwise ("_cw" suffix), counter-clockwise ("_ccw" suffix), or
+  // in the shortest direction ("_short" suffix) in which case the plugin
+  // chooses the direction for you based on the shortest path. For example,
+  // if the element's rotation is currently 170 degrees and you want to tween
+  // it to -170 degrees, a normal rotation tween would travel a total of 340
+  // degrees in the counter-clockwise direction, but if you use the "_short"
+  // suffix, it would travel 20 degrees in the clockwise direction instead.
+  // Example
+  TweenLite.to(element, 2, {rotation:"-170_short"});
+
+  // or even use it on 3D rotations and use relative prefixes:
+  //TweenLite.to(element, 2, {rotation:"-170_short", rotationX:"-=30_cw", rotationY:"1.5rad_ccw"});
+
+  // Prior to version 1.9.0, directionalRotation was called shortRotation and it
+  // only handled going in the shortest direction. The new directionalRotation
+  // functionality is much more flexible and easy to use (just slap a suffix on
+  // the regular property). For backwards compatibility, CSSPlugin still
+  // recognizes "shortRotation", but it has been deprecated.
+
+  // autoAlpha - the same thing as "opacity" except that when the value hits "0",
+  // the "visibility" property will be set to "hidden" in order to improve
+  // browser rendering performance and prevent clicks/interactivity on the
+  // target. When the value is anything other than 0, "visibility" will be set
+  // to "visible".
+  // Example: fade out and set visibility:hidden
+  //TweenLite.to(element, 5, {autoAlpha:0});
+  // in 2 seconds, fade back in with visibility:visible
+  //TweenLite.to(element, 10, {autoAlpha:1, delay:7});
+
+  // className -
+  // allows you to morph between classes on an element. For example, let's say
+  // myElement has a class of "class1" currently and you want to change to
+  // "class2" and animate the differences, you could do this:
+  //TweenLite.to(myElement, 1, {className:"class2"});
+
+  // And if you want to ADD the class to the existing one, you can simply use
+  // the "+=" prefix. To remove a class, use the "-=" prefix like this:
+  //TweenLite.to(myElement, 1, {className:"+=class2"});
+
+  // Note: there are a few css-related properties that don't tween like IE
+  // filters, but that is a very rare exception. Also, there is a slight speed
+  // penalty when using className because the engine needs to loop through all
+  // of the css properties to analyze which ones are different.
+
+  // autoRound -
+  // By default, CSSPlugin will round pixel values and zIndex to the closest
+  // integer during the tween (the inbetween values) because it improves browser
+  // performance, but if you'd rather disable that behavior, pass
+  // autoRound:false in the css object. You can still use the RoundPropsPlugin
+  // to manually define properties that you want rounded.
+
+</script>
 
 </body>
 
