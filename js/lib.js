@@ -151,6 +151,14 @@ function cbox_exclude( _this, options, /*Code to resume when done*/ callback ) {
 }; // end: function cbox_exclude()
 
 //----------------------------------------------------------------------------
+function cbox_useTrr( _this, options, /*Code to resume when done*/ callback ) {
+  //--------------------------------------------------------------------------
+  console.log( " ..*4.5) cbox_useTrr() Box checked = '" + $( '#cbox_useTrr' ).prop('checked') + "'. *");
+  _this.settings.isUseTrrData = $( '#cbox_useTrr' ).prop('checked');
+  if ( typeof callback == 'function' ) { callback(); return; }
+}; // end: cbox_useTrr()
+
+//----------------------------------------------------------------------------
 function cbox_useSVG( _this, options, /*Code to resume when done*/ callback ) {
   //--------------------------------------------------------------------------
   console.log( " ..*4.5) cbox_useSVG() Box checked = '" + $( '#cbox_useSVG' ).prop('checked') + "'. *");
@@ -179,7 +187,10 @@ function cbox_every1( _this, options, /*Code to resume when done*/ callback ) {
     $( '#cbox_every2' ).prop('checked', false );
     $( '#cbox_every3' ).prop('checked', false );
     $( '#cbox_every4' ).prop('checked', false );
+    $( '#cbox_1x1_cluster' ).prop('checked', false );
+    $( '#cbox_3x3_cluster' ).prop('checked', false );
     $( '#cbox_5x5_cluster' ).prop('checked', false );
+    $( '#cbox_7x7_cluster' ).prop('checked', false );
   }
   if ( typeof callback == 'function' ) { callback(); return; }
 } // end: cbox_every1()
@@ -195,7 +206,10 @@ function cbox_every2( _this, options, /*Code to resume when done*/ callback ) {
     $( '#cbox_every1' ).prop('checked', false );
     $( '#cbox_every3' ).prop('checked', false );
     $( '#cbox_every4' ).prop('checked', false );
+    $( '#cbox_1x1_cluster' ).prop('checked', false );
+    $( '#cbox_3x3_cluster' ).prop('checked', false );
     $( '#cbox_5x5_cluster' ).prop('checked', false );
+    $( '#cbox_7x7_cluster' ).prop('checked', false );
   }
   if ( typeof callback == 'function' ) { callback(); return; }
 } // end: cbox_every2()
@@ -211,7 +225,10 @@ function cbox_every3( _this, options, /*Code to resume when done*/ callback ) {
     $( '#cbox_every1' ).prop('checked', false );
     $( '#cbox_every2' ).prop('checked', false );
     $( '#cbox_every4' ).prop('checked', false );
+    $( '#cbox_1x1_cluster' ).prop('checked', false );
+    $( '#cbox_3x3_cluster' ).prop('checked', false );
     $( '#cbox_5x5_cluster' ).prop('checked', false );
+    $( '#cbox_7x7_cluster' ).prop('checked', false );
   }
   if ( typeof callback == 'function' ) { callback(); return; }
 } // end: cbox_every3()
@@ -227,10 +244,51 @@ function cbox_every4( _this, options, /*Code to resume when done*/ callback ) {
     $( '#cbox_every1' ).prop('checked', false );
     $( '#cbox_every2' ).prop('checked', false );
     $( '#cbox_every3' ).prop('checked', false );
+    $( '#cbox_1x1_cluster' ).prop('checked', false );
+    $( '#cbox_3x3_cluster' ).prop('checked', false );
     $( '#cbox_5x5_cluster' ).prop('checked', false );
+    $( '#cbox_7x7_cluster' ).prop('checked', false );
   }
   if ( typeof callback == 'function' ) { callback(); return; }
 } // end: cbox_every4()
+
+//----------------------------------------------------------------------------
+function cbox_1x1_cluster( _this, options, /*Code to resume when done*/ callback ) {
+  //--------------------------------------------------------------------------
+  console.log( " ..*4.5) cbox_1x1_cluster() Box checked = '" + $( '#cbox_1x1_cluster' ).prop('checked') + "'. *");
+  if ( $( '#cbox_1x1_cluster' ).prop('checked') ) {
+    _this.settings.isProcessBySkipCount = false;
+    _this.settings.isProcessByCluster = true;
+    _this.settings.pixelsPerClusterSide = 1;
+    $( '#cbox_every1' ).prop('checked', false );
+    $( '#cbox_every2' ).prop('checked', false );
+    $( '#cbox_every3' ).prop('checked', false );
+    $( '#cbox_every4' ).prop('checked', false );
+    $( '#cbox_3x3_cluster' ).prop('checked', false );
+    $( '#cbox_5x5_cluster' ).prop('checked', false );
+    $( '#cbox_7x7_cluster' ).prop('checked', false );
+  }
+  if ( typeof callback == 'function' ) { callback(); return; }
+} // end: cbox_1x1_cluster()
+
+//----------------------------------------------------------------------------
+function cbox_3x3_cluster( _this, options, /*Code to resume when done*/ callback ) {
+  //--------------------------------------------------------------------------
+  console.log( " ..*4.5) cbox_3x3_cluster() Box checked = '" + $( '#cbox_3x3_cluster' ).prop('checked') + "'. *");
+  if ( $( '#cbox_3x3_cluster' ).prop('checked') ) {
+    _this.settings.isProcessBySkipCount = false;
+    _this.settings.isProcessByCluster = true;
+    _this.settings.pixelsPerClusterSide = 3;
+    $( '#cbox_every1' ).prop('checked', false );
+    $( '#cbox_every2' ).prop('checked', false );
+    $( '#cbox_every3' ).prop('checked', false );
+    $( '#cbox_every4' ).prop('checked', false );
+    $( '#cbox_1x1_cluster' ).prop('checked', false );
+    $( '#cbox_5x5_cluster' ).prop('checked', false );
+    $( '#cbox_7x7_cluster' ).prop('checked', false );
+  }
+  if ( typeof callback == 'function' ) { callback(); return; }
+} // end: cbox_3x3_cluster()
 
 //----------------------------------------------------------------------------
 function cbox_5x5_cluster( _this, options, /*Code to resume when done*/ callback ) {
@@ -244,9 +302,31 @@ function cbox_5x5_cluster( _this, options, /*Code to resume when done*/ callback
     $( '#cbox_every2' ).prop('checked', false );
     $( '#cbox_every3' ).prop('checked', false );
     $( '#cbox_every4' ).prop('checked', false );
+    $( '#cbox_1x1_cluster' ).prop('checked', false );
+    $( '#cbox_3x3_cluster' ).prop('checked', false );
+    $( '#cbox_7x7_cluster' ).prop('checked', false );
   }
   if ( typeof callback == 'function' ) { callback(); return; }
 } // end: cbox_5x5_cluster()
+
+//----------------------------------------------------------------------------
+function cbox_7x7_cluster( _this, options, /*Code to resume when done*/ callback ) {
+  //--------------------------------------------------------------------------
+  console.log( " ..*4.5) cbox_7x7_cluster() Box checked = '" + $( '#cbox_7x7_cluster' ).prop('checked') + "'. *");
+  if ( $( '#cbox_7x7_cluster' ).prop('checked') ) {
+    _this.settings.isProcessBySkipCount = false;
+    _this.settings.isProcessByCluster = true;
+    _this.settings.pixelsPerClusterSide = 7;
+    $( '#cbox_every1' ).prop('checked', false );
+    $( '#cbox_every2' ).prop('checked', false );
+    $( '#cbox_every3' ).prop('checked', false );
+    $( '#cbox_every4' ).prop('checked', false );
+    $( '#cbox_1x1_cluster' ).prop('checked', false );
+    $( '#cbox_3x3_cluster' ).prop('checked', false );
+    $( '#cbox_7x7_cluster' ).prop('checked', false );
+  }
+  if ( typeof callback == 'function' ) { callback(); return; }
+} // end: cbox_7x7_cluster()
 
 //==============================================================================
 //******************************************************************************

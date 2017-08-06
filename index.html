@@ -36,59 +36,129 @@ One way to explode items at: https://greensock.com/forums/topic/7622-one-way-to-
 
 <body>
 
-  <div class="people">
-    <a id="newPhotoMike" style="margin-left: 170px;" photoTag="mike"
-       data-src="./images/mike_stern_422x436.jpg"
+  <div class="peopleLeftRow1">
+    <a id="newPhotoMike" style="margin-left: 0px;" photoTag="mike"
+       data-src="./images/mike_CC_422x436.jpg"
+       title=""
     >Mike</a>
     <a id="newPhotoMeg" style="margin-left: 10px;" photoTag="meg"
        data-src="./images/meg_CC_422x436.jpg"
+       title=""
     >Meg</a>
+    <a id="newPhotoLaura" style="margin-left: 10px;" photoTag="laura"
+       data-src="./images/laura_oliphant_422x436.jpg"
+       title=""
+    >Laura</a>
+    <a id="newPhotoGary" style="margin-left: 10px;" photoTag="gary"
+       data-src="./images/gary_crossland_422x436.jpg"
+       title=""
+    >Gary</a>
+    <span>     (All photos are 422x436 .jpg)
   </div>
 
-  <div class="actions">
-    <a id="convert" style="margin-left: 0px;">Convert</a>
-    <a id="elements" style="margin-left: 10px;">Elements</a>
-    <a id="explode" style="margin-left: 10px;">Explode</a>
-    <a id="collapse" style="margin-left: 10px;">Collapse</a>
-    <a id="riseUp" style="margin-left: 10px;">Rise Up</a>
-    <a id="combineAll" style="margin-left: 10px;">All</a>
+  <div class="actionsLeftRow2">
+  </div>
+
+  <div class="actionsMiddleRow1">
+    <a id="convert" style="margin-left: 0px;"
+       title="Display converted particle map once it is done.
+           Create particle map and then create a
+           canvas in the conversionContainer and write the particle
+           dots on it in one pass, i.e. without animation."
+       >Convert</a>
+    <a id="elements" style="margin-left: 10px;"
+       title="Create AnimationElements in the animationContainer. Pin them to
+           their image home position, i.e. re-create the photo image."
+       >Elements</a>
+    <a id="explode" style="margin-left: 10px;"
+       title="Create AnimationElements in the animationContainer. Pin them to
+           their image home position, i.e. re-create the photo image.
+           Delay and then apply the explode animation effect.
+           Elements move up and out."
+       >Explode</a>
+    <a id="collapse" style="margin-left: 10px;"
+       title="Create AnimationElements in the animationContainer. Pin them to
+           their image home position, i.e. re-create the photo image.
+           Delay and then apply the collapse animation effect.
+           Elements move down and inward."
+       >Collapse</a>
+    <a id="riseUp" style="margin-left: 10px;"
+       title="Create AnimationElements in the animationContainer. Pin below
+           their image bottom position, i.e. photo image is visible below the
+           animationContainer.
+           Delay and then apply the rise up animation effect.
+           Elements move up and out."
+       >Rise Up</a>
+    <a id="combineAll" style="margin-left: 10px;"
+       title="Create AnimationElements in the animationContainer. Pin them to
+           their image home position, i.e. re-create the photo image.
+           Delay and then animate a sequence of events: collaspe, rise up."
+       >All</a>
     <!-- <a id="reset" style="margin-left: 10px;">RESET</a> -->
   </div>
 
-  <div class="actionCheckboxesRow1">
-    <input id="cbox_transform" type="checkbox"
-           title="When converting photo to halftone: transform pixels into halftone balls. Per units from next checkboxes."
-           >-Transform&nbsp;
-    <input id="cbox_exclude" type="checkbox"
-           title="When converting photo to halftone: reject pixels per units from next checkboxes. Default is to Transform pixels."
-           >-Exclude&nbsp;
-    <input id="cbox_useTrr" type="checkbox"
-           title="When converting photo to halftone: use stored TRR effectsData array."
-           >-Use TrrData&nbsp;
-    <input id="cbox_useSVG" type="checkbox"
-           title="When converting halftone particles to animation elements: use SVG objects. Default is Canvas objects."
-           >-Use SVG&nbsp;
-    <input id="cbox_yoyo" type="checkbox"
-           title="Combine actions forwards and backwards, i.e. collapse and rise up. Default is just the single specified action."
-           >-Yoyo&nbsp;
+  <div class="actionsMiddleRow2">
+    <a id="copyPhoto_color" style="margin-left: 0px;"
+       title="Make color copy (pixel by pixel) of selected photo. Write to conversionContainer onto single <canvas>."
+       >Copy</a>
+    <span>&nbsp;&nbsp;&nbsp;</span>
+    <a id="copyPhoto_greyscale" style="margin-left: 10px;"
+       title="Make grey scale copy (pixel by pixel) of selected photo. Write to conversionContainer onto single <canvas>."
+       >GreyScale</a>
   </div>
 
-  <div class="checkboxesRow1">
+  <div class="actionCheckboxesRightRow1">
+    <input id="cbox_transform" type="checkbox"
+           title="When converting photo to halftone: transform pixels into halftone balls. Per units from next checkboxes."
+           >Transform&nbsp;
+    <input id="cbox_exclude" type="checkbox"
+           title="When converting photo to halftone: reject pixels per units from next checkboxes. Default is to Transform pixels."
+           >Exclude&nbsp;
+    <input id="cbox_useTrr" type="checkbox"
+           title="When converting photo to halftone: use stored TRR effectsData array."
+           >TrrData&nbsp;
+    <input id="cbox_useCanvas" type="checkbox"
+           title="When converting halftone particles to animation elements: use <canvas> objects. Default is Canvas objects."
+           >Canvas&nbsp;
+    <input id="cbox_useSVG" type="checkbox"
+           title="When converting halftone particles to animation elements: use <svg> objects. Default is Canvas objects."
+           >SVG&nbsp;
+    <input id="cbox_useDiv" type="checkbox"
+           title="When converting halftone particles to animation elements: use <div> objects. Default is Canvas objects."
+           >Div
+  </div>
+
+  <div class="actionCheckboxesRightRow2">
+
+    <span>Every:&nbsp;</span>
+
     <input id="cbox_every1" type="checkbox"
            title="When converting photo to halftone: reject or transform every pixel. Default is every 1 pixel."
-           >-Every 1&nbsp;
+           >1&nbsp;
     <input id="cbox_every2" type="checkbox"
            title="When converting photo to halftone: reject or transform every 2 pixels. Default is every 1 pixel."
-           >-Every 2&nbsp;
+           >2&nbsp;
     <input id="cbox_every3" type="checkbox"
            title="When converting photo to halftone: reject or transform every 3 pixels. Default is every 1 pixel."
-           >-Every 3&nbsp;
+           >3&nbsp;
     <input id="cbox_every4" type="checkbox"
            title="When converting photo to halftone: reject or transform every 4 pixels. Default is every 1 pixel."
-           >-Every 4&nbsp;
+           >4&nbsp;
+
+    <span>&nbsp;Cluster:&nbsp;</span>
+
+    <input id="cbox_1x1_cluster" type="checkbox"
+           title="When converting photo to halftone: reject or transform every 1x1 cluster of pixels. Default is every 1 pixel."
+           >1x1&nbsp;
+    <input id="cbox_3x3_cluster" type="checkbox"
+           title="When converting photo to halftone: reject or transform every 3x3 cluster of pixels. Default is every 1 pixel."
+           >3x3&nbsp;
     <input id="cbox_5x5_cluster" type="checkbox"
            title="When converting photo to halftone: reject or transform every 5x5 cluster of pixels. Default is every 1 pixel."
-           >-5x5 Cluster&nbsp;
+           >5x5&nbsp;
+    <input id="cbox_7x7_cluster" type="checkbox"
+           title="When converting photo to halftone: reject or transform every 7x7 cluster of pixels. Default is every 1 pixel."
+           >7x7&nbsp;
   </div>
 
   <div id="profileContainer" class="profileContainer">

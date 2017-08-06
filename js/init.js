@@ -21,7 +21,10 @@ function trr_init(/*Code to resume when done*/ callback ) {
     isEvery2: false,
     isEvery3: true,
     isEvery4: false,
+    is1x1_cluster: false,
+    is3x3_cluster: false,
     is5x5_cluster: false,
+    is7x7_cluster: false,
     isProcessByCluster: false,
     pixelsPerClusterSide: 5,
     isUseTrrData: false,
@@ -50,7 +53,10 @@ function trr_init(/*Code to resume when done*/ callback ) {
   $( '#cbox_every2' ).prop('checked', trrPlugin.defaults.isEvery2 );
   $( '#cbox_every3' ).prop('checked', trrPlugin.defaults.isEvery3 );
   $( '#cbox_every4' ).prop('checked', trrPlugin.defaults.isEvery4 );
+  $( '#cbox_1x1_cluster' ).prop('checked', trrPlugin.defaults.is1x1_cluster );
+  $( '#cbox_3x3_cluster' ).prop('checked', trrPlugin.defaults.is3x3_cluster );
   $( '#cbox_5x5_cluster' ).prop('checked', trrPlugin.defaults.is5x5_cluster );
+  $( '#cbox_7x7_cluster' ).prop('checked', trrPlugin.defaults.is7x7_cluster );
 
   // Add click handlers for various functions.
   // NOTE: within click handler 'this' refers to the dom element clicked, i.e.
@@ -63,6 +69,14 @@ function trr_init(/*Code to resume when done*/ callback ) {
                            imgSrc: $(this).attr('data-src') } );
   });
   $( "#newPhotoMeg" ).click( function( event ) {
+    newPhoto( trrPlugin, { photoType: "color", photoTag: $(this).attr('photoTag'),
+                           imgSrc: $(this).attr('data-src') } );
+  });
+  $( "#newPhotoLaura" ).click( function( event ) {
+    newPhoto( trrPlugin, { photoType: "color", photoTag: $(this).attr('photoTag'),
+                           imgSrc: $(this).attr('data-src') } );
+  });
+  $( "#newPhotoGary" ).click( function( event ) {
     newPhoto( trrPlugin, { photoType: "color", photoTag: $(this).attr('photoTag'),
                            imgSrc: $(this).attr('data-src') } );
   });
@@ -128,10 +142,18 @@ function trr_init(/*Code to resume when done*/ callback ) {
   $( "#cbox_every4" ).click( function( event ) {
     cbox_every4( trrPlugin, { event: event } );
   });
+  $( "#cbox_1x1_cluster" ).click( function( event ) {
+    cbox_1x1_cluster( trrPlugin, { event: event } );
+  });
+  $( "#cbox_3x3_cluster" ).click( function( event ) {
+    cbox_3x3_cluster( trrPlugin, { event: event } );
+  });
   $( "#cbox_5x5_cluster" ).click( function( event ) {
     cbox_5x5_cluster( trrPlugin, { event: event } );
   });
-
+  $( "#cbox_7x7_cluster" ).click( function( event ) {
+    cbox_7x7_cluster( trrPlugin, { event: event } );
+  });
   if ( typeof callback == 'function' ) { callback( trrPlugin ); return; }
   return trrPlugin;
 }; // end: trr_init()
