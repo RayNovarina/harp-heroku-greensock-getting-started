@@ -9,7 +9,7 @@
 
   <title>GSAP getting started</title>
 
-    <link rel="stylesheet" type="text/css" href="css/main.css">
+    <!-- <link rel="stylesheet" type="text/css" href="css/main.css"> -->
 
     <!-- Bootstrap Latest compiled and minified CSS -->
     <!-- link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous" -->
@@ -26,12 +26,308 @@
 <script type="text/javascript" src="js/gsap/src/minified/TimelineMax.min.js"></script>
 
 <style type="text/css">
+  .links {
+    position: absolute;
+    top: 100px;
+    left: 8px;
+  }
+  .links a {
+    padding: 0 6px;
+    text-decoration: underline;
+    color: black;
+    cursor: pointer;
+    margin-right: 6px;
+  }
+  .links a:hover {
+    background: beige;
+    color: green;
+  }
 </style>
 </head>
 
 <!--
-  // directionalRotation -
+
 -->
+<body>
+
+<div id="centerPanel" class="trr-elements-stage centerPanel"></div>
+
+<div class="links">
+  <div id="clickTo-links">
+    <span style="color: red;">Click FWD To:&nbsp;</span>
+    <a parms="f;Square;;Circle;">Square</a>
+    <a parms="f;Circle;Square;Cross;">Circle</a>
+    <a parms="f;Cross;Circle;L;">Cross</a>
+    <a parms="f;L;Cross;;">L</a>
+    <br>
+    <span style="color: red;">Click BAK To:&nbsp;</span>
+    <a parms="b;Square;;Circle;">Square</a>
+    <a parms="b;Circle;Square;Cross;">Circle</a>
+    <a parms="b;Cross;Circle;L;">Cross</a>
+    <a parms="b;L;Cross;;">L</a>
+  </div>
+  <br>
+  <div id="scrollTo-links">
+    <span style="color: red;">Scroll To:</span>
+    <a >Square</a>
+    <a >Circle</a>
+    <a >Cross</a>
+    <a >L</a>
+  </div>
+</div>
+
+<script type="text/javascript">
+'use strict';
+
+// Insert the REQUIRED <svg> tag within the sceneContainer to contain the svg <circle> elements.
+// NOTE: browser can not directly add <svg> or <circle> tags, need to use "w3.org namespace".
+var elementsContainerElem =
+   $( makeSvgElementNS('svg') )
+        .attr( 'id', 'aniElems_Con_for_' )
+        .attr( 'width', '800' )
+        .attr( 'height', '800' )
+        .attr( 'trr-ani-elem-type', 'circle' )
+        .addClass( 'trr-ani-elems-container' ),
+$elementsContainerElem = $(elementsContainerElem);
+$( '#centerPanel' ).append( elementsContainerElem );
+
+
+/*
+Timeline: 2000 <svg circles>, each with a line that goes to a point on each
+photo. Each "photo to photo" segment of the line has a label. So we can play
+the timeline from a "scroll from Photo X to Photo Y".
+
+
+var t1 = new TimelineMax( { paused: true } );
+forEach(stipples) function(element, stippleIdx) {
+  // var meg_points = [ {x:100, y:200}, {x:200, y:0}, {x:300, y:100}, {x:600, y:50} ];
+  // var eduardo_points = [ {x:100, y:200}, {x:200, y:0}, {x:300, y:100}, {x:600, y:50} ];
+  // var mike_points = [ {x:100, y:200}, {x:200, y:0}, {x:300, y:100}, {x:600, y:50} ];
+  var points = getPoints(photos, stippleIdx);
+  // points = [ megParticles[stippleIdx], eduardoParticles[stippleIdx],
+  //            mikeParticles[stippleIdx], garryParticles[stippleIdx]
+  //          ]
+
+  //curviness is set to 0 so each segment is straight (no curves)
+  var bezTween = TweenMax.to(
+    element,
+    durationSecs,
+    { bezier:{ curviness:0, values: points },
+      ease: Linear.easeNone
+    }
+  );
+  t1.insert( bezTween );
+}); // end forEach(stipples)
+
+forEach(photos) function(photo, photoIdx) {
+  function(particlesInfo) {
+    tl.add( photo.tag, durationSecs * photoIdx );
+  });
+}); // end forEach(photos)
+
+// scroll "down" from meg to eduardo:
+t1.play( "meg", "eduardo" );
+
+// scroll "up" from eduardo to meg:
+t1.play( "meg", "eduardo").reverse();
+
+ */
+var domElementsObjsArray = [];
+var durationSecs = 1;
+//var elementx = $( makeSvgElementNS( 'circle' ) )
+//      .attr( 'cx', 0 )
+//      .attr( 'cy', 0 )
+//      .attr( 'r', 4 )
+//      .attr( 'fill', 'blue' );
+//$elementsContainerElem.append( elementx );
+//domElementsObjsArray.push( elementx );
+
+var square_stipples = [
+  {x:10, y:10, r:1}, {x:20, y:10, r:2}, {x:30, y:10, r:3}, {x:40, y:10, r:4}, {x:50, y:10, r:4},
+  {x:10, y:20, r:2},                                                          {x:50, y:20, r:3},
+  {x:10, y:30, r:3},                                                          {x:50, y:30, r:2},
+  {x:10, y:40, r:4},                                                          {x:50, y:40, r:1},
+  {x:10, y:50, r:1},                                                          {x:50, y:50, r:2},
+  {x:10, y:60, r:2},                                                          {x:50, y:60, r:3},
+  {x:10, y:70, r:3}, {x:20, y:70, r:3}, {x:30, y:70, r:4}, {x:40, y:70, r:1}, {x:50, y:70, r:4},
+];
+
+var circle_stipples = [
+                                        {x:30, y:10, r:2}, {x:40, y:10, r:3},
+                     {x:20, y:20, r:2}, {x:30, y:20, r:3}, {x:40, y:20, r:4},
+  {x:10, y:30, r:2}, {x:20, y:30, r:3},                    {x:40, y:30, r:1}, {x:50, y:30, r:2},
+  {x:10, y:40, r:3},                                                          {x:50, y:40, r:3},
+  {x:10, y:50, r:4}, {x:20, y:50, r:4},                    {x:40, y:50, r:2}, {x:50, y:50, r:4},
+                     {x:20, y:60, r:1}, {x:30, y:60, r:4}, {x:40, y:60, r:3},
+                     {x:20, y:70, r:2}, {x:30, y:70, r:1},
+];
+
+var cross_stipples = [
+                                        {x:30, y:10, r:1}, {x:40, y:10, r:2},
+                                        {x:30, y:20, r:2}, {x:40, y:20, r:3},
+  {x:10, y:30, r:1}, {x:20, y:30, r:2}, {x:30, y:30, r:3}, {x:40, y:30, r:4}, {x:50, y:30, r:3},
+  {x:10, y:40, r:2}, {x:20, y:40, r:3}, {x:30, y:40, r:4}, {x:40, y:40, r:1}, {x:50, y:40, r:4},
+                                        {x:30, y:50, r:1}, {x:40, y:50, r:2},
+                                        {x:30, y:60, r:2}, {x:40, y:60, r:3},
+                                        {x:30, y:70, r:3}, {x:40, y:70, r:4},
+];
+
+var l_stipples = [
+  {x:10, y:10, r:1},
+  {x:10, y:20, r:2},
+  {x:10, y:30, r:3},
+  {x:10, y:40, r:4},
+  {x:10, y:50, r:1}, {x:20, y:50, r:1}, {x:30, y:50, r:2}, {x:40, y:50, r:3}, {x:50, y:50, r:2},
+  {x:10, y:60, r:2}, {x:20, y:60, r:2}, {x:30, y:60, r:3}, {x:40, y:60, r:4}, {x:50, y:60, r:3},                                                    {x:50, y:60, r:3},
+  {x:10, y:70, r:3}, {x:20, y:70, r:3}, {x:30, y:70, r:4}, {x:40, y:70, r:1}, {x:50, y:70, r:4},
+];
+
+var shapes = [ square_stipples, circle_stipples, cross_stipples, l_stipples ];
+var shape_fills = [ 'blue', 'red', 'green', 'grey'];
+var defaultIdx = 0;
+var numStipples = shapes[defaultIdx].length;
+
+// function particlesToSvgCircles()
+// Seed elements array with default image.
+var i;
+var particles = shapes[defaultIdx];
+var fill = shape_fills[defaultIdx];
+for (i=0; i < numStipples; i++) {
+  var element = $( makeSvgElementNS( 'circle' ) )
+        .attr( 'cx',   particles[i].x )
+        .attr( 'cy',   particles[i].y )
+        .attr( 'r',    particles[i].r )
+        .attr( 'fill', fill );
+  $elementsContainerElem.append( element );
+  domElementsObjsArray.push( element );
+}
+
+var elements = domElementsObjsArray;
+var t1 = undefined;
+
+var toSquare = new TimelineMax( { paused: true } );
+t1 = toSquare;
+var shapeIdx = 0;
+particles = shapes[shapeIdx];
+fill = shape_fills[shapeIdx];
+$.each( elements, function( idx, element ) {
+  t1.insert(
+    TweenMax.to( element, durationSecs,
+      { attr: { cx: particles[idx].x, cy: particles[idx].y,
+                 r: particles[idx].r, fill: fill }
+      }
+    )
+  );
+});
+
+var toCircle = new TimelineMax( { paused: true } );
+t1 = toCircle;
+shapeIdx = 1;
+particles = shapes[shapeIdx];
+fill = shape_fills[shapeIdx];
+$.each( elements, function( idx, element ) {
+  t1.insert(
+    TweenMax.to( element, durationSecs,
+      { attr: { cx: particles[idx].x, cy: particles[idx].y,
+                r: particles[idx].r,  fill: fill }
+      }
+    )
+  );
+});
+
+var toCross = new TimelineMax( { paused: true } );
+t1 = toCross;
+shapeIdx = 2;
+particles = shapes[shapeIdx];
+fill = shape_fills[shapeIdx];
+$.each( elements, function( idx, element ) {
+  t1.insert(
+    TweenMax.to( element, durationSecs,
+      { attr: { cx: particles[idx].x, cy: particles[idx].y,
+                r: particles[idx].r,  fill: fill }
+      }
+    )
+  );
+});
+
+var toL = new TimelineMax( { paused: true } );
+t1 = toL;
+shapeIdx = 3;
+particles = shapes[shapeIdx];
+fill = shape_fills[shapeIdx];
+$.each( elements, function( idx, element ) {
+  t1.insert(
+    TweenMax.to( element, durationSecs,
+      { attr: { cx: particles[idx].x, cy: particles[idx].y,
+                r: particles[idx].r,  fill: fill }
+      }
+    )
+  );
+});
+
+/*
+setTimeout(function() {
+fromSquareToCircle.play();
+setTimeout(function() {
+fromCircleToCross.play();
+setTimeout(function() {
+fromCrossToL.play();
+setTimeout(function() {
+fromLtoSquare.play();
+}, 3000);
+}, 3000);
+}, 3000);
+}, 2000);
+*/
+
+// "Click To" and "Scroll To" links.
+$( 'a' ).click( function( attribs ) {
+  scrollTo( { event: attribs } );
+});
+
+//----------------------------------------------------------------------------
+function scrollTo( options ) {
+  //----------------------------------------------------------------------------
+  // parms="f;Circle;Square;Cross;"
+  var $scrolledToElem = $( options.event.currentTarget ),
+      parms = $scrolledToElem.attr('parms').split(';'),
+      forwards = parms[0] == 'f',
+      scrolledToShapeTag = parms[1],
+      scrolledToPrevShapeTag = parms[2],
+      scrolledToNextShapeTag = parms[3];
+  //alert( "Clicked on ScrollTo '" + toShapeTag + "'. *" );
+  console.log( " ..*4.5) scrollTo() Scroll '" +
+               (forwards ? ("forwards' to: '"  + scrolledToShapeTag + "' from: '" + scrolledToPrevShapeTag)
+                         : ("backwards' to: '" + scrolledToShapeTag + "' from: '" + scrolledToNextShapeTag) ) +
+               "'. *");
+  if (forwards) {
+    console.log( " ..*4.5) scrollTo() will execute: 'window[ " + ('to' + scrolledToShapeTag) + "].play();' *" );
+    window[ 'to' + scrolledToShapeTag ].play();
+    //window[ 'to' + toShapeTag ].seek(0);
+  } else {
+    console.log( " ..*4.5) scrollTo() will execute: 'window[ " + ('to' + scrolledToNextShapeTag) + "].reverse();' *" );
+    window[ 'to' + scrolledToNextShapeTag ].reverse();
+  }
+}; // end scrollTo()
+
+//------------------------------------------------------------------------------
+function makeSvgElementNS( tag ) {
+  //----------------------------------------------------------------------------
+  // per: http://chubao4ever.github.io/tech/2015/07/16/jquerys-append-not-working-with-svg-element.html
+  return document.createElementNS('http://www.w3.org/2000/svg', tag);
+}; // end makeSvgElementNS()
+
+</script>
+
+</body>
+
+</html>
+
+<!-- PREVIOUS EXAMPLES ========================= -->
+
+<!--
+  // directionalRotation -
+
 <body>
 
 <center style="margin-top: 200px;">
@@ -97,13 +393,9 @@
 </script>
 
 </body>
-
-</html>
-
-<!-- PREVIOUS EXAMPLES ========================= -->
+-->
 
 <!--
-
 <body>
 
 <center style="margin-top: 80px;">

@@ -1,0 +1,141 @@
+.peopleLeftRow1 {
+  position: absolute;
+  top: 2px;
+  left: 8px;
+}
+.peopleLeftRow1 a {
+  padding: 0 6px;
+  text-decoration: underline;
+  color: blue;
+  cursor: pointer
+}
+.peopleLeftRow1 a:hover {
+  background: beige;
+  color: green;
+}
+.peopleLeftRow2 {
+  position: absolute;
+  top: 22px;
+  left: 8px;
+}
+.peopleLeftRow2 a {
+  padding: 0 6px;
+  text-decoration: underline;
+  color: blue;
+  cursor: pointer
+}
+.peopleLeftRow2 a:hover {
+  background: beige;
+  color: green;
+}
+
+.actionsMiddleRow1 {
+  position: absolute;
+  top: 2px;
+  left: 346px;
+}
+.actionsMiddleRow1 a {
+  padding: 0 6px;
+  text-decoration: underline;
+  color: blue;
+  cursor: pointer
+}
+.actionsMiddleRow1 a:hover {
+  background: beige;
+  color: green;
+}
+.actionsMiddleRow1 input:hover {
+  background: beige;
+  color: green;
+}
+.actionsMiddleRow2 {
+  position: absolute;
+  top: 22px;
+  left: 340px;
+}
+.actionsMiddleRow2 a {
+  padding: 0 6px;
+  text-decoration: underline;
+  color: blue;
+  cursor: pointer
+}
+.actionsMiddleRow2 a:hover {
+  background: beige;
+  color: green;
+}
+.actionsMiddleRow2 input:hover {
+  background: beige;
+  color: green;
+}
+
+.actionsRightRow1 {
+  position: absolute;
+  top: 2px;
+  left: 636px;
+}
+.actionsRightRow1 input {
+  margin-left: 0px;
+  padding: 0 6px;
+  text-decoration: underline;
+  color: blue;
+  cursor: pointer
+}
+.actionsRightRow1 input:hover {
+  background: beige;
+  color: green;
+}
+.actionsRightRow1 a {
+  padding: 0 6px;
+  text-decoration: underline;
+  color: blue;
+  cursor: pointer
+}
+.actionsRightRow1 a:hover {
+  background: beige;
+  color: green;
+}
+
+.actionsRightRow2 {
+  position: absolute;
+  top: 22px;
+  left: 636px;
+}
+.actionsRightRow2 input {
+  margin-left: 0px;
+  padding: 0 6px;
+  text-decoration: underline;
+  color: blue;
+  cursor: pointer
+}
+.actionsRightRow2 input:hover {
+  color: green;
+}
+.actionsRightRow2 a {
+  padding: 0 6px;
+  text-decoration: underline;
+  color: blue;
+  cursor: pointer
+}
+.actionsRightRow2 a:hover {
+  background: beige;
+  color: green;
+}
+
+.leftPanel {
+  position: absolute;
+  top: 48px;
+  left: 10px;
+  width: 610px;
+  height: 610px;
+  background-color: beige;
+  border: 4px solid green;
+}
+.centerPanel {
+  position: absolute;
+  top: 48px;
+  left: 632px;
+  width: 610px;
+  height: 610px;
+  background-color: #E7F1F7; /* Climate Corp "halftone background blue" */
+  border: 4px solid black;
+}
